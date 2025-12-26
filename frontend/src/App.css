@@ -115,13 +115,30 @@ header h1 {
   text-align: center;
 }
 
+/* =========================================
+   TABLET & LARGE MOBILE (768px and below)
+   ========================================= */
 @media (max-width: 768px) {
+  .App {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
   .container {
     padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 15px;
+  }
+
+  header {
+    margin-bottom: 30px;
   }
 
   header h1 {
     font-size: 2rem;
+    margin-bottom: 8px;
   }
 
   .subtitle {
@@ -130,25 +147,120 @@ header h1 {
 
   .main-content {
     grid-template-columns: 1fr;
-    gap: 30px;
+    gap: 25px;
   }
 
   .wheel-panel {
     order: -1;
   }
 
+  .selection-panel {
+    gap: 25px;
+  }
+
   .spin-button {
     font-size: 1.1rem;
     padding: 15px 30px;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .error-message {
+    font-size: 0.9rem;
+    padding: 10px 16px;
+  }
+
+  .restaurant-count {
+    font-size: 0.85rem;
   }
 }
 
+/* =========================================
+   MOBILE (480px and below)
+   ========================================= */
 @media (max-width: 480px) {
+  .App {
+    padding: 5px;
+  }
+
   .container {
     padding: 15px;
+    border-radius: 12px;
+  }
+
+  header {
+    margin-bottom: 20px;
   }
 
   header h1 {
     font-size: 1.5rem;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .main-content {
+    gap: 20px;
+  }
+
+  .selection-panel {
+    gap: 20px;
+  }
+
+  .wheel-panel {
+    gap: 20px;
+  }
+
+  .spin-button {
+    font-size: 1rem;
+    padding: 14px 24px;
+    width: 100%;
+    max-width: 100%;
+    min-width: unset;
+  }
+
+  .error-message {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+  }
+
+  .restaurant-count {
+    font-size: 0.8rem;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE (360px and below)
+   ========================================= */
+@media (max-width: 360px) {
+  .container {
+    padding: 12px;
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+  }
+
+  .main-content {
+    gap: 15px;
+  }
+
+  .selection-panel {
+    gap: 15px;
+  }
+
+  .wheel-panel {
+    gap: 15px;
+  }
+
+  .spin-button {
+    font-size: 0.95rem;
+    padding: 12px 20px;
   }
 }

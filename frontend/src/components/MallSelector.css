@@ -45,3 +45,21 @@
   color: #e74c3c;
 }
 
+@media (max-width: 480px) {
+  .selector-label {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+
+  .mall-select {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  .mall-select-loading,
+  .mall-select-error {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+}
+
