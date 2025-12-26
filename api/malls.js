@@ -1,38 +1,30 @@
-// GET /api/users
-// Example endpoint that connects to Supabase and returns data
+// GET /api/malls
+// Get all available shopping malls
 
-import supabase from './lib/supabase.js';
+import { getAvailableMalls, getMallInfo } from './lib/restaurants.js';
 
 async function handler(req, res) {
-
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Query Supabase for users
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .limit(10); // Limit to 10 results for demo
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({
-        error: 'Database error',
-        message: error.message,
-        hint: 'Make sure the "users" table exists in Supabase',
+    const malls = [];
+    const mallIds = getAvailableMalls();
+    
+    for (const mallId of mallIds) {
+      const info = getMallInfo(mallId);
+      malls.push({
+        id: mallId,
+        name: info.name,
+        display_name: info.display_name
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      count: data ? data.length : 0,
-      users: data || [],
-    });
+    return res.status(200).json({ malls });
   } catch (error) {
-    console.error('API error:', error);
+    console.error('Error fetching malls:', error);
     return res.status(500).json({
       error: 'Internal server error',
       message: error.message,

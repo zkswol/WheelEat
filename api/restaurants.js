@@ -1,38 +1,34 @@
-// GET /api/users
-// Example endpoint that connects to Supabase and returns data
+// GET /api/restaurants?categories=<categories>&mall_id=<mall_id>
+// Get restaurants, optionally filtered by categories (comma-separated) and mall
 
-import supabase from './lib/supabase.js';
+import { getRestaurantsByCategories, getAllCategories } from './lib/restaurants.js';
 
 async function handler(req, res) {
-
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Query Supabase for users
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .limit(10); // Limit to 10 results for demo
+    const mallId = req.query.mall_id || 'sunway_square';
+    let restaurants;
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({
-        error: 'Database error',
-        message: error.message,
-        hint: 'Make sure the "users" table exists in Supabase',
-      });
+    if (req.query.categories) {
+      // Filter by categories
+      const categoryList = req.query.categories.split(',').map(c => c.trim());
+      restaurants = getRestaurantsByCategories(categoryList, mallId);
+    } else {
+      // Get all restaurants
+      const allCategories = getAllCategories(mallId);
+      restaurants = getRestaurantsByCategories(allCategories, mallId);
     }
 
     return res.status(200).json({
-      success: true,
-      count: data ? data.length : 0,
-      users: data || [],
+      restaurants,
+      count: restaurants.length
     });
   } catch (error) {
-    console.error('API error:', error);
+    console.error('Error fetching restaurants:', error);
     return res.status(500).json({
       error: 'Internal server error',
       message: error.message,
