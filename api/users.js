@@ -4,10 +4,11 @@
 import supabase from './lib/supabase.js';
 
 export default async function handler(req, res) {
-  // Set CORS headers
+  // Set CORS headers first - always set them
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
