@@ -6,7 +6,7 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wheeleat-ml5qmrsel-ybtan6666s-projects.vercel.app';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wheeleat-5j1oovdar-ybtan6666s-projects.vercel.app';
 
 // Debug: Log API URL (remove in production)
 console.log('API_BASE_URL:', API_BASE_URL);
