@@ -60,7 +60,11 @@ header h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 30px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .spin-button {
@@ -153,6 +157,9 @@ header h1 {
   .wheel-panel {
     order: -1;
     margin-bottom: 10px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .selection-panel {
@@ -213,6 +220,10 @@ header h1 {
   .wheel-panel {
     gap: 18px;
     margin-bottom: 8px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0 5px;
   }
 
   .spin-button {

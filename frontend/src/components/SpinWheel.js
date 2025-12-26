@@ -15,25 +15,28 @@ function SpinWheel({ restaurants, spinning, result }) {
 
   const wheelGeom = useMemo(() => {
     // More responsive sizing for mobile phones
+    // Account for container padding: typically 15-20px on mobile each side
     const screenWidth = window.innerWidth;
+    const containerPadding = screenWidth <= 480 ? 30 : 80; // Account for container padding (15px each side on mobile)
+    const availableWidth = screenWidth - containerPadding;
+    
     const isSmallMobile = screenWidth <= 360;
     const isMobile = screenWidth <= 480;
-    const isLargeMobile = screenWidth <= 600; // iPhone 14 Pro Max is ~430px
+    const isLargeMobile = screenWidth <= 600;
     
     let wheelSize;
     if (isSmallMobile) {
-      // Very small phones: use most of screen width minus padding
-      wheelSize = Math.min(280, screenWidth - 40);
+      // Very small phones: use ~80% of available width
+      wheelSize = Math.min(280, Math.floor(availableWidth * 0.80));
     } else if (isMobile) {
-      // Regular mobile phones (including iPhone 14 Pro Max): optimize sizing
-      // Use ~85% of screen width, max 320px for better balance
-      wheelSize = Math.min(320, Math.floor(screenWidth * 0.75));
+      // Regular mobile phones (including iPhone 14 Pro Max): use ~75% of available width
+      wheelSize = Math.min(300, Math.floor(availableWidth * 0.75));
     } else if (isLargeMobile) {
       // Large mobile phones / small tablets
-      wheelSize = Math.min(380, screenWidth - 80);
+      wheelSize = Math.min(380, Math.floor(availableWidth * 0.85));
     } else {
       // Tablets and desktop: original sizing
-      wheelSize = Math.min(420, screenWidth - 80);
+      wheelSize = Math.min(420, availableWidth);
     }
     
     // Scale pointer and padding for mobile

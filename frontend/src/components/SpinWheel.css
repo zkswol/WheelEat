@@ -3,12 +3,20 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
 .spin-wheel-frame {
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .spin-wheel-rotator {
@@ -89,15 +97,20 @@
 @media (max-width: 768px) {
   .spin-wheel-container.v2 {
     padding: 10px 0;
+    width: 100%;
+    max-width: 100%;
   }
 
   .spin-wheel-frame {
     max-width: 100%;
-    overflow: hidden;
+    width: 100%;
+    overflow: visible;
+    margin: 0 auto;
   }
 
   .spin-wheel-rotator {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    margin: 0 auto;
   }
 
   .spin-wheel-pointer {
@@ -125,17 +138,25 @@
   .spin-wheel-container.v2 {
     padding: 5px 0;
     margin: 0 auto;
+    width: 100%;
     max-width: 100%;
+    overflow: hidden;
   }
 
   .spin-wheel-frame {
     max-width: 100%;
+    width: 100%;
     margin: 0 auto;
+    overflow: visible;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .spin-wheel-rotator {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     margin: 0 auto;
+    flex-shrink: 0;
   }
 
   .spin-wheel-pointer {
