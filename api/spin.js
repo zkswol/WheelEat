@@ -21,9 +21,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = req.body;
+    // Parse body if it's a string (Vercel sometimes sends string)
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(400).json({ detail: 'Invalid JSON in request body' });
+      }
+    }
     
-    if (!body.selected_categories || body.selected_categories.length === 0) {
+    if (!body || !body.selected_categories || body.selected_categories.length === 0) {
       return res.status(400).json({ detail: 'At least one category must be selected' });
     }
 
