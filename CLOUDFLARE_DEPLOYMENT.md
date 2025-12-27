@@ -1,6 +1,6 @@
 # Cloudflare Pages Deployment Guide
 
-This repository is configured for deployment on Cloudflare Pages with no build command and no framework.
+This repository is configured for deployment on Cloudflare Pages. The build command installs dependencies and builds the React frontend.
 
 ## Structure
 
@@ -34,18 +34,20 @@ If you see an error like "Could not resolve @supabase/supabase-js", make sure:
 
 3. Deploy to Cloudflare Pages:
    - Connect your repository to Cloudflare Pages
-   - Set **Build command**: (leave empty)
+   - Set **Build command**: `cd functions && npm install && cd ../frontend && npm install && npm run build`
    - Set **Build output directory**: `frontend/build`
    - Set **Root directory**: (leave as root)
+   
+   **Note**: This builds both Functions dependencies and the frontend during deployment.
 
-### Option 2: Configure Build in Cloudflare Pages
+### Option 2: Configure Build in Cloudflare Pages (Alternative)
 
 1. In Cloudflare Pages dashboard:
-   - **Build command**: `cd frontend && npm install && npm run build`
+   - **Build command**: `cd functions && npm install && cd ../frontend && npm install && npm run build`
    - **Build output directory**: `frontend/build`
    - **Root directory**: (leave as root)
 
-2. However, note that the requirement is "no build command", so Option 1 is preferred.
+2. This builds both Functions dependencies and the frontend during deployment.
 
 ## Environment Variables
 

@@ -107,6 +107,7 @@ function App() {
         console.error('Failed to load malls:', err);
         setMallsLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load categories when mall changes
