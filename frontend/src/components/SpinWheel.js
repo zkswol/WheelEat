@@ -1,12 +1,58 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './SpinWheel.css';
 
+function getViewportSize() {
+  // visualViewport is more accurate on mobile (esp. iOS address bar / safe areas)
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+  return {
+    width: Math.round(vv?.width ?? window.innerWidth),
+    height: Math.round(vv?.height ?? window.innerHeight),
+  };
+}
+
+function useViewportSize() {
+  const [vp, setVp] = useState(() => {
+    if (typeof window === 'undefined') return { width: 0, height: 0 };
+    return getViewportSize();
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let raf = 0;
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setVp(getViewportSize()));
+    };
+
+    const vv = window.visualViewport;
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+    vv?.addEventListener('resize', update);
+    vv?.addEventListener('scroll', update);
+
+    // Ensure correct size on first paint (fixes “refresh-to-fix”)
+    update();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+      vv?.removeEventListener('resize', update);
+      vv?.removeEventListener('scroll', update);
+    };
+  }, []);
+
+  return vp;
+}
+
 function SpinWheel({ restaurants, spinning, result }) {
   const rotationRef = useRef(0); // current rotation in degrees (normalized 0..360)
   const lastSpinKeyRef = useRef(null);
   const [rotationDeg, setRotationDeg] = useState(0);
   const [transitionMs, setTransitionMs] = useState(0);
   const spinAudioRef = useRef(null);
+  const viewport = useViewportSize();
 
   const items = useMemo(() => {
     if (!restaurants || restaurants.length === 0) return [];
@@ -15,8 +61,8 @@ function SpinWheel({ restaurants, spinning, result }) {
 
   const wheelGeom = useMemo(() => {
     // More responsive sizing for mobile phones - ensure it fits on screen
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
+    const screenWidth = viewport.width || window.innerWidth;
+    const screenHeight = viewport.height || window.innerHeight;
     
     // Account for all spacing: container padding, header, buttons, etc.
     const containerPadding = screenWidth <= 480 ? 50 : 80; // Account for container padding (25px each side on mobile)
@@ -67,7 +113,7 @@ function SpinWheel({ restaurants, spinning, result }) {
       isMobile,
       isSmallMobile,
     };
-  }, []);
+  }, [viewport.width, viewport.height]);
 
   const sliceDeg = items.length > 0 ? 360 / items.length : 0;
 
