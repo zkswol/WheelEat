@@ -59,28 +59,66 @@ function SpinWheel({ restaurants, spinning, result }) {
     return restaurants.map((r) => (typeof r === 'string' ? { name: r } : r));
   }, [restaurants]);
 
-  // Arc wheel geometry:
-  // - Mobile: 95vw
-  // - Desktop: fixed 500px
-  // Container clips to half height (semi-circle) using overflow hidden in CSS.
-  const arcGeom = useMemo(() => {
-    const screenWidth = viewport.width || (typeof window !== 'undefined' ? window.innerWidth : 0);
-    const isMobile = screenWidth > 0 && screenWidth <= 768;
-    const arcWidthPx = isMobile ? Math.round(screenWidth * 0.95) : 500;
-
+  const wheelGeom = useMemo(() => {
+    // More responsive sizing for mobile phones - ensure it fits on screen
+    const screenWidth = viewport.width || window.innerWidth;
+    const screenHeight = viewport.height || window.innerHeight;
+    
+    // Account for all spacing: container padding, header, buttons, etc.
+    const containerPadding = screenWidth <= 480 ? 50 : 80; // Account for container padding (25px each side on mobile)
+    const headerSpace = screenWidth <= 480 ? 100 : 120; // Space for header and subtitle
+    const buttonSpace = screenWidth <= 480 ? 100 : 100; // Space for spin button and other elements
+    const extraMargin = screenWidth <= 480 ? 50 : 60; // Extra margin for safety
+    
+    // Calculate available space - use the smaller of width or height constraints
+    const availableWidth = screenWidth - containerPadding;
+    const availableHeight = screenHeight - headerSpace - buttonSpace - extraMargin;
+    
+    const isSmallMobile = screenWidth <= 360;
+    const isMobile = screenWidth <= 480;
+    const isLargeMobile = screenWidth <= 600;
+    
+    let wheelSize;
+    if (isSmallMobile) {
+      // Very small phones: ensure it fits in height with more aggressive sizing
+      const widthBased = Math.floor(availableWidth * 0.55);
+      const heightBased = Math.floor(availableHeight * 0.75);
+      wheelSize = Math.min(200, widthBased, heightBased);
+    } else if (isMobile) {
+      // Regular mobile phones: use smaller percentage to ensure it fits
+      const widthBased = Math.floor(availableWidth * 0.50);
+      const heightBased = Math.floor(availableHeight * 0.70);
+      wheelSize = Math.min(220, widthBased, heightBased);
+    } else if (isLargeMobile) {
+      // Large mobile phones / small tablets
+      wheelSize = Math.min(320, Math.floor(availableWidth * 0.70));
+    } else {
+      // Tablets and desktop: original sizing
+      wheelSize = Math.min(420, availableWidth);
+    }
+    
+    // Scale pointer and padding for mobile - make them even smaller
+    const pointerSize = isMobile ? 10 : 20;
+    const pointerGap = isMobile ? 4 : 10;
+    const padding = isMobile ? 4 : 14;
+    const extra = pointerSize + pointerGap + padding;
+    
     return {
+      wheelSize,
+      size: wheelSize + extra * 2,
+      extra,
+      pointerSize,
+      pointerGap,
+      padding,
       isMobile,
-      arcWidthPx,
-      wheelPx: arcWidthPx, // full circle size; we clip to top half
-      heightPx: Math.round(arcWidthPx / 2), // visible height (semi-circle)
+      isSmallMobile,
     };
-  }, [viewport.width]);
+  }, [viewport.width, viewport.height]);
 
   const sliceDeg = items.length > 0 ? 360 / items.length : 0;
 
   const palette = useMemo(
     () => [
-      // Slightly softened palette (works better with “glass” styling)
       '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
       '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
       '#FFB347', '#87CEEB', '#DDA0DD', '#F0E68C',
@@ -105,19 +143,17 @@ function SpinWheel({ restaurants, spinning, result }) {
     ].join(' ');
   };
 
-  // Outer arc path (for curved labels via <textPath>)
-  const describeArc = (cx, cy, r, startDeg, endDeg) => {
-    const start = polarToCartesian(cx, cy, r, startDeg);
-    const end = polarToCartesian(cx, cy, r, endDeg);
-    const largeArcFlag = endDeg - startDeg <= 180 ? '0' : '1';
-    return [`M ${start.x} ${start.y}`, `A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`].join(' ');
-  };
-
-  const getMaxCharsForCount = (count, isMobile) => {
-    if (count <= 6) return isMobile ? 18 : 22;
-    if (count <= 10) return isMobile ? 14 : 18;
-    if (count <= 12) return isMobile ? 12 : 16;
-    return isMobile ? 10 : 14;
+  const getLabelStyleForCount = (count, isMobile, isSmallMobile) => {
+    // Adjust font sizes for mobile - make them larger for better readability
+    const baseMultiplier = isSmallMobile ? 1.1 : isMobile ? 1.0 : 0.95;
+    
+    // Tweak these thresholds to your taste. Goal: keep labels readable as slices get thinner.
+    if (count <= 8) return { fontSize: 4.5 * baseMultiplier, maxChars: isMobile ? 16 : 18 };
+    if (count <= 12) return { fontSize: 4.0 * baseMultiplier, maxChars: isMobile ? 14 : 16 };
+    if (count <= 18) return { fontSize: 3.5 * baseMultiplier, maxChars: isMobile ? 12 : 14 };
+    if (count <= 26) return { fontSize: 3.0 * baseMultiplier, maxChars: isMobile ? 10 : 11 };
+    if (count <= 36) return { fontSize: 2.6 * baseMultiplier, maxChars: isMobile ? 8 : 9 };
+    return { fontSize: 2.3 * baseMultiplier, maxChars: isMobile ? 7 : 8 };
   };
 
   // Spinning sound (frontend/public/sounds/spin.mp3 -> /sounds/spin.mp3)
@@ -184,15 +220,15 @@ function SpinWheel({ restaurants, spinning, result }) {
     }
 
     const targetCenterDegFromTop = targetIndex * sliceDeg + sliceDeg / 2;
-    // rotation=0 means slice 0 boundary starts at top; pointer is at top-center.
-    // To bring target center to top-center, rotate by -(targetCenterDegFromTop)
+    // rotation=0 means slice 0 boundary starts at top; pointer is at top.
+    // To bring target center to top, rotate by -(targetCenterDegFromTop)
     const desiredFinal = ((-targetCenterDegFromTop % 360) + 360) % 360;
 
     // We animate to a big value, then normalize on transition end.
-    const fullRotations = 6 * 360; // slightly heavier feel
+    const fullRotations = 5 * 360; // fixed 5 turns for consistency
     const target = fullRotations + desiredFinal;
 
-    setTransitionMs(4200);
+    setTransitionMs(3200);
     setRotationDeg(target);
   }, [spinning, result, items, sliceDeg]);
 
@@ -205,66 +241,57 @@ function SpinWheel({ restaurants, spinning, result }) {
   };
 
   return (
-    <div
-      className="spin-arc"
-      style={{
-        // CSS variables so you can tune without touching JS
-        '--arc-width': `${arcGeom.arcWidthPx}px`,
-      }}
-    >
-      <div className="spin-arc__needle" aria-hidden="true" />
+    <div className="spin-wheel-container v2">
+      <div className="spin-wheel-frame" style={{ width: wheelGeom.size, height: wheelGeom.size }}>
+        <div className="spin-wheel-pointer" aria-hidden="true" />
 
-      <div className="spin-arc__clip">
         <div
-          className="spin-arc__rotator"
+          className="spin-wheel-rotator"
           style={{
-            width: arcGeom.wheelPx,
-            height: arcGeom.wheelPx,
+            width: wheelGeom.wheelSize,
+            height: wheelGeom.wheelSize,
             transform: `rotate(${rotationDeg}deg)`,
             transitionDuration: `${transitionMs}ms`,
           }}
           onTransitionEnd={onTransitionEnd}
         >
           <svg
-            className="spin-arc__svg"
-            width={arcGeom.wheelPx}
-            height={arcGeom.wheelPx}
+            className="spin-wheel-svg"
+            width={wheelGeom.wheelSize}
+            height={wheelGeom.wheelSize}
             viewBox="0 0 100 100"
             role="img"
             aria-label="Spin wheel"
           >
             <defs>
               <filter id="wheelShadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="6" stdDeviation="4" floodColor="rgba(0,0,0,0.22)" />
+                <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="rgba(0,0,0,0.25)" />
               </filter>
-              <radialGradient id="glassHighlight" cx="30%" cy="20%" r="80%">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.32)" />
-                <stop offset="45%" stopColor="rgba(255,255,255,0.10)" />
-                <stop offset="100%" stopColor="rgba(255,255,255,0.06)" />
-              </radialGradient>
             </defs>
 
             {items.length === 0 ? (
-              <circle cx="50" cy="50" r="48" fill="rgba(240,240,240,0.7)" />
+              <circle cx="50" cy="50" r="48" fill="#f0f0f0" />
             ) : items.length === 1 ? (
               (() => {
                 const r = items[0];
                 const fill = palette[0];
+                const label = r.name;
                 return (
                   <g>
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="48"
-                      fill={fill}
-                      opacity="0.88"
-                      stroke="rgba(255,255,255,0.7)"
+                    <circle cx="50" cy="50" r="48" fill={fill} stroke="#ffffff" strokeWidth="0.8" filter="url(#wheelShadow)" />
+                    <text
+                      x="50"
+                      y="50"
+                      fill="#ffffff"
+                      fontSize="6"
+                      fontWeight="800"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      paintOrder="stroke"
+                      stroke="rgba(0,0,0,0.18)"
                       strokeWidth="0.8"
-                      filter="url(#wheelShadow)"
-                    />
-                    <circle cx="50" cy="50" r="48" fill="url(#glassHighlight)" opacity="0.55" />
-                    <text x="50" y="50" className="spin-arc__label" textAnchor="middle" dominantBaseline="middle">
-                      {r.name}
+                    >
+                      {label}
                     </text>
                   </g>
                 );
@@ -275,42 +302,42 @@ function SpinWheel({ restaurants, spinning, result }) {
                 const start = -90 + i * sliceDeg;
                 const end = -90 + (i + 1) * sliceDeg;
                 const d = describeSlice(50, 50, 48, start, end);
-
-                const maxChars = getMaxCharsForCount(items.length, arcGeom.isMobile);
-                const label = r.name.length > maxChars ? `${r.name.slice(0, Math.max(1, maxChars - 1))}…` : r.name;
-
-                // Label arc just inside outer rim
-                const labelPathId = `arcLabel-${i}`;
-                const arcD = describeArc(50, 50, 44, start + 1.5, end - 1.5);
-
+                const { fontSize, maxChars } = getLabelStyleForCount(items.length, wheelGeom.isMobile, wheelGeom.isSmallMobile);
+                const label =
+                  r.name.length > maxChars ? `${r.name.slice(0, Math.max(1, maxChars - 1))}…` : r.name;
+                const mid = (start + end) / 2;
+                // Adjust text position for mobile - move it slightly closer to center for better readability
+                const textRadius = wheelGeom.isMobile ? 28 : 30;
+                const textPos = polarToCartesian(50, 50, textRadius, mid);
                 const fill = palette[i % palette.length];
 
                 return (
                   <g key={`${r.name}-${i}`}>
-                    <path
-                      d={d}
-                      fill={fill}
-                      opacity="0.86"
-                      stroke="rgba(255,255,255,0.65)"
-                      strokeWidth="0.8"
-                      filter="url(#wheelShadow)"
-                    />
-                    <path d={d} fill="url(#glassHighlight)" opacity="0.35" />
-
-                    <path id={labelPathId} d={arcD} fill="none" />
-                    <text className="spin-arc__label" textAnchor="middle">
-                      <textPath href={`#${labelPathId}`} startOffset="50%">
-                        {label}
-                      </textPath>
+                    <path d={d} fill={fill} stroke="#ffffff" strokeWidth="0.8" filter="url(#wheelShadow)" />
+                    <text
+                      x={textPos.x}
+                      y={textPos.y}
+                      fill="#ffffff"
+                      fontSize={fontSize}
+                      fontWeight="700"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      paintOrder="stroke"
+                      stroke="rgba(0,0,0,0.18)"
+                      strokeWidth="0.6"
+                      transform={`rotate(${mid + 90} ${textPos.x} ${textPos.y})`}
+                    >
+                      {label}
                     </text>
                   </g>
                 );
               })
             )}
+
           </svg>
         </div>
 
-        {spinning && <div className="spin-arc__overlay" />}
+        {spinning && <div className="spinning-overlay" />}
       </div>
     </div>
   );
