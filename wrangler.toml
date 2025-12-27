@@ -1,0 +1,11 @@
+name = "wheeleat"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "wheeleat"
+
+[env.production.vars]
+# Environment variables should be set in Cloudflare Pages dashboard
+# SUPABASE_URL = "your-supabase-url"
+# SUPABASE_ANON_KEY = "your-supabase-anon-key"
+

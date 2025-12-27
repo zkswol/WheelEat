@@ -6,10 +6,8 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wheeleat.vercel.app';
-
-// Debug: Log API URL (remove in production)
-console.log('API_BASE_URL:', API_BASE_URL);
+// Use relative paths for API calls (same domain)
+const API_BASE_URL = '';
 
 function App() {
   const [mallId, setMallId] = useState('sunway_square');

@@ -1,9 +1,6 @@
 {
   "name": "wheeleat",
   "version": "1.0.0",
-  "description": "WheelEat - Spin Wheel Restaurant Picker",
-  "engines": {
-    "node": "24.x"
-  }
+  "description": "WheelEat - Spin Wheel Restaurant Picker (Cloudflare Pages)",
+  "private": true
 }
-

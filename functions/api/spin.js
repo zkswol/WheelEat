@@ -2,27 +2,33 @@
 // Spin the wheel and return a random restaurant from selected categories
 
 import { getRestaurantsByCategories } from './lib/restaurants.js';
-import supabase from './lib/supabase.js';
+import { createSupabaseClient } from './lib/supabase.js';
+import { createCORSResponse, jsonResponse } from './lib/cors.js';
 
-async function handler(req, res) {
+export async function onRequest(context) {
+  const { request, env } = context;
+
+  // Handle preflight OPTIONS requests
+  if (request.method === 'OPTIONS') {
+    return createCORSResponse();
+  }
+
   // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (request.method !== 'POST') {
+    return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
   try {
-    // Parse body if it's a string (Vercel sometimes sends string)
-    let body = req.body;
-    if (typeof body === 'string') {
-      try {
-        body = JSON.parse(body);
-      } catch (e) {
-        return res.status(400).json({ detail: 'Invalid JSON in request body' });
-      }
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return jsonResponse({ detail: 'Invalid JSON in request body' }, 400);
     }
     
     if (!body || !body.selected_categories || body.selected_categories.length === 0) {
-      return res.status(400).json({ detail: 'At least one category must be selected' });
+      return jsonResponse({ detail: 'At least one category must be selected' }, 400);
     }
 
     const mallId = body.mall_id || 'sunway_square';
@@ -32,7 +38,7 @@ async function handler(req, res) {
     const availableRestaurants = getRestaurantsByCategories(selectedCategories, mallId);
 
     if (availableRestaurants.length === 0) {
-      return res.status(400).json({ detail: 'No restaurants found in selected categories' });
+      return jsonResponse({ detail: 'No restaurants found in selected categories' }, 400);
     }
 
     // Random selection with equal probability
@@ -40,6 +46,7 @@ async function handler(req, res) {
 
     // Log the spin to Supabase database
     try {
+      const supabase = createSupabaseClient(env);
       const { data: spinLog, error: dbError } = await supabase
         .from('spin_logs')
         .insert({
@@ -60,7 +67,7 @@ async function handler(req, res) {
         // Continue even if database insert fails
       }
 
-      return res.status(200).json({
+      return jsonResponse({
         restaurant_name: selectedRestaurant.name,
         restaurant_unit: selectedRestaurant.unit,
         restaurant_floor: selectedRestaurant.floor,
@@ -72,7 +79,7 @@ async function handler(req, res) {
     } catch (dbError) {
       console.error('Database error:', dbError);
       // Return result even if database insert fails
-      return res.status(200).json({
+      return jsonResponse({
         restaurant_name: selectedRestaurant.name,
         restaurant_unit: selectedRestaurant.unit,
         restaurant_floor: selectedRestaurant.floor,
@@ -84,27 +91,10 @@ async function handler(req, res) {
     }
   } catch (error) {
     console.error('Error in spin endpoint:', error);
-    return res.status(500).json({
+    return jsonResponse({
       error: 'Internal server error',
       message: error.message,
-    });
+    }, 500);
   }
-}
-
-// Export with CORS wrapper
-export default async function(req, res) {
-  // Set CORS headers FIRST - before anything else
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-
-  // Handle preflight OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Call the actual handler
-  return await handler(req, res);
 }
 
