@@ -82,9 +82,36 @@ function GoogleLoginButton({ onLogin }) {
           accessToken: tokenResponse.access_token
         };
 
-        // Save to localStorage
+        // Save to localStorage first (for immediate UI update)
         console.log('Saving user to localStorage:', googleUser);
         localStorage.setItem('wheeleat_user', JSON.stringify(googleUser));
+        
+        // Save to database (upsert - create or update)
+        try {
+          console.log('Saving user to database...');
+          const dbResponse = await fetch('/api/users', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: googleUser.id,
+              name: googleUser.name,
+              email: googleUser.email,
+            }),
+          });
+
+          if (dbResponse.ok) {
+            const dbResult = await dbResponse.json();
+            console.log('User saved to database:', dbResult);
+          } else {
+            console.warn('Failed to save user to database:', await dbResponse.text());
+            // Continue anyway - user is logged in via localStorage
+          }
+        } catch (dbError) {
+          console.error('Error saving user to database:', dbError);
+          // Continue anyway - user is logged in via localStorage
+        }
         
         // Trigger login callback
         console.log('Calling onLogin callback');
