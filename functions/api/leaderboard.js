@@ -134,20 +134,30 @@ async function fetchPlaceDetailsLegacy(placeId, apiKey) {
     const res = await fetch(url.toString());
     if (!res.ok) {
       const text = await res.text().catch(() => '');
+      console.error(`Place Details API HTTP error for ${placeId}: ${res.status} - ${text}`);
       throw new Error(`Place Details API failed: HTTP ${res.status} - ${text}`);
     }
 
     const data = await res.json();
     
-    if (data.status === 'OK' && data.result) {
-      return {
+    // Log API response status for debugging
+    if (data.status !== 'OK') {
+      console.error(`Place Details API error for ${placeId}: ${data.status} - ${data.error_message || 'Unknown error'}`);
+      return null;
+    }
+    
+    if (data.result) {
+      const result = {
         name: data.result.name,
         rating: data.result.rating,
         user_ratings_total: data.result.user_ratings_total,
         place_id: data.result.place_id || placeId,
       };
+      console.log(`Place Details API success for ${placeId}: rating=${result.rating}, reviews=${result.user_ratings_total}`);
+      return result;
     }
     
+    console.warn(`Place Details API returned OK but no result for ${placeId}`);
     return null;
   } catch (error) {
     console.error(`Error fetching place details for ${placeId}:`, error.message);
@@ -258,9 +268,13 @@ export async function onRequest(context) {
     const mallId = url.searchParams.get('mall_id') || 'sunway_square';
 
     // Cache first (edge cache)
+    // Skip cache if nocache parameter is present (for debugging)
+    const urlParams = new URL(request.url).searchParams;
+    const skipCache = urlParams.get('nocache') === '1';
+    
     const cache = caches.default;
     const cacheKey = new Request(url.toString(), { method: 'GET' });
-    const cached = await cache.match(cacheKey);
+    const cached = skipCache ? null : await cache.match(cacheKey);
     if (cached) return cached;
 
     const mallInfo = getMallInfo(mallId);
@@ -309,18 +323,22 @@ export async function onRequest(context) {
         // First, check if we have a place_id mapping for this restaurant
         const placeId = getPlaceId(r.name, mallId);
         let match = null;
+        let debugInfo = null;
         
         if (placeId) {
           // Use Place Details API for exact match
+          console.log(`Looking up place_id for "${r.name}": ${placeId}`);
           match = await fetchPlaceDetails(placeId, apiKey);
           if (match) {
             // Even if rating is null/undefined, we found the place, so count as success
             // Some places might not have ratings yet
             if (match.rating !== null && match.rating !== undefined) {
               successCount++;
+              console.log(`✅ Place Details API success for "${r.name}": rating=${match.rating}, reviews=${match.user_ratings_total}`);
             } else {
               // Place found but no rating - still count as found
-              console.log(`Place found for "${r.name}" but no rating available (place_id: ${placeId})`);
+              console.log(`⚠️ Place found for "${r.name}" but no rating available (place_id: ${placeId})`);
+              debugInfo = { method: 'place_details', place_id: placeId, found: true, has_rating: false };
             }
             return {
               ...r,
@@ -330,10 +348,12 @@ export async function onRequest(context) {
                 place_id: match.place_id || placeId,
                 name: match.name || null,
               },
+              _debug: debugInfo || { method: 'place_details', place_id: placeId, found: true, has_rating: true },
             };
           } else {
             // Place Details API failed, will fallback to text search
-            console.log(`Place Details API failed for "${r.name}" (place_id: ${placeId}), falling back to text search`);
+            console.log(`❌ Place Details API failed for "${r.name}" (place_id: ${placeId}), falling back to text search`);
+            debugInfo = { method: 'place_details', place_id: placeId, found: false, fallback: 'text_search' };
           }
         }
         
@@ -394,6 +414,7 @@ export async function onRequest(context) {
                 name: match.name || null,
               }
             : null,
+          _debug: debugInfo || (placeId ? { method: 'place_details', place_id: placeId, found: false } : { method: 'text_search', found: match !== null }),
         };
       } catch (e) {
         errorCount++;
@@ -416,15 +437,27 @@ export async function onRequest(context) {
     const withRatings = enriched.filter(r => r.rating !== null).length;
     const total = enriched.length;
     
+    // Remove _debug from restaurants for cleaner response (optional - comment out if you want to see debug info)
+    const restaurantsClean = enriched.map(({ _debug, ...rest }) => rest);
+    
     const body = {
       mall: { id: mallId, name: mallInfo?.name, display_name: mallInfo?.display_name },
       source: 'google_places_textsearch_per_restaurant',
       cached_ttl_seconds: CACHE_TTL_SECONDS,
-      restaurants: enriched,
+      restaurants: restaurantsClean,
       _debug: {
         total_restaurants: total,
         restaurants_with_ratings: withRatings,
         restaurants_without_ratings: total - withRatings,
+        // Include debug info for restaurants without ratings (for troubleshooting)
+        restaurants_without_ratings_debug: enriched
+          .filter(r => r.rating === null)
+          .map(r => ({
+            name: r.name,
+            has_place_id: !!getPlaceId(r.name, mallId),
+            place_id: getPlaceId(r.name, mallId),
+            debug: r._debug,
+          })),
       },
     };
 
