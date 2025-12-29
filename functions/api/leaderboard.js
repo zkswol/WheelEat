@@ -305,16 +305,26 @@ export async function onRequest(context) {
       .map((row) => toRestaurantObject(row, mallId))
       .filter(Boolean);
 
+    // Apply batch slicing BEFORE API key check, so fallback also respects batching
+    let restaurantsToProcess = restaurants;
+    if (batch > 0 && batchSize > 0) {
+      const start = (batch - 1) * batchSize;
+      const end = start + batchSize;
+      restaurantsToProcess = restaurants.slice(start, end);
+      console.log(`📦 Batch slicing (before API check): batch ${batch}, size ${batchSize}, processing restaurants ${start + 1}-${Math.min(end, restaurants.length)} of ${restaurants.length}`);
+    }
+
     const apiKey = env.GOOGLE_PLACES_API_KEY || env.GOOGLE_API_KEY;
     if (!apiKey) {
       console.error('❌ GOOGLE_PLACES_API_KEY not found in environment variables');
       console.error('Available env keys:', Object.keys(env).filter(k => k.includes('GOOGLE') || k.includes('API')));
       // Still return the base list (graceful degradation) so UI can render.
+      // Use restaurantsToProcess (already sliced if batching) instead of full restaurants array
       const fallback = {
         mall: { id: mallId, name: mallInfo?.name, display_name: mallInfo?.display_name },
         source: 'static_only',
         cached_ttl_seconds: CACHE_TTL_SECONDS,
-        restaurants: restaurants.map((r) => ({
+        restaurants: restaurantsToProcess.map((r) => ({
           name: r.name,
           unit: r.unit || null,
           floor: r.floor || null,
@@ -324,6 +334,15 @@ export async function onRequest(context) {
           reviews: null,
           google: null,
         })),
+        // Add batch info if batch processing
+        ...(batch > 0 && batchSize > 0 ? {
+          batch: {
+            current: batch,
+            size: batchSize,
+            total_restaurants: restaurants.length,
+            has_more: (batch * batchSize) < restaurants.length,
+          }
+        } : {}),
       };
 
       const headers = new Headers();
@@ -340,16 +359,13 @@ export async function onRequest(context) {
     // 2. Process restaurants without place_ids last (they need text search, which uses more API calls)
     // 3. Skip text search fallback when limit is hit to save API calls
     
-    // If batch processing is requested, only process a subset
-    let restaurantsToProcess = restaurants;
-    if (batch > 0 && batchSize > 0) {
-      const start = (batch - 1) * batchSize;
-      const end = start + batchSize;
-      restaurantsToProcess = restaurants.slice(start, end);
-      console.log(`📦 Batch processing: batch ${batch}, size ${batchSize}, processing restaurants ${start + 1}-${Math.min(end, restaurants.length)} of ${restaurants.length}`);
-      console.log(`📦 Total restaurants: ${restaurants.length}, Sliced to: ${restaurantsToProcess.length}`);
-    } else {
+    // Note: restaurantsToProcess is already set above (before API key check) if batching is requested
+    // If not batching, use full restaurants array
+    if (!(batch > 0 && batchSize > 0)) {
+      restaurantsToProcess = restaurants;
       console.log(`📦 No batch processing: processing all ${restaurants.length} restaurants`);
+    } else {
+      console.log(`📦 Batch processing: batch ${batch}, size ${batchSize}, processing restaurants from slice (${restaurantsToProcess.length} restaurants)`);
     }
     
     // Separate restaurants into two groups: with place_ids and without
