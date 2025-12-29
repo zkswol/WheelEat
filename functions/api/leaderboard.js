@@ -8,6 +8,7 @@
 
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 import { getMallInfo, getRestaurantsByMall, getLogoPath } from './lib/restaurants.js';
+import { getPlaceId } from './lib/restaurant-places.js';
 
 const CACHE_TTL_SECONDS = 300; // 5 minutes
 
@@ -73,8 +74,136 @@ function pickBestMatch(targetName, places) {
   return bestScore >= 0.4 ? best : null;
 }
 
+/**
+ * Fetch place details by place_id using Place Details API
+ * @param {string} placeId - Google Places place_id
+ * @param {string} apiKey - Google Places API key
+ * @returns {Promise<object|null>} - Place details or null
+ */
+async function fetchPlaceDetails(placeId, apiKey) {
+  if (!placeId || !apiKey) return null;
+  
+  try {
+    // Try new Places API first
+    const baseUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+    
+    const res = await fetch(baseUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'id,displayName,rating,userRatingCount',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        name: data.displayName?.text || data.displayName,
+        rating: data.rating,
+        user_ratings_total: data.userRatingCount,
+        place_id: data.id || placeId,
+      };
+    }
+    
+    // Fallback to legacy Place Details API
+    return await fetchPlaceDetailsLegacy(placeId, apiKey);
+  } catch (error) {
+    console.log(`New Places API error for place_id ${placeId}, trying legacy: ${error.message}`);
+    return await fetchPlaceDetailsLegacy(placeId, apiKey);
+  }
+}
+
+/**
+ * Fetch place details using legacy Place Details API
+ * @param {string} placeId - Google Places place_id
+ * @param {string} apiKey - Google Places API key
+ * @returns {Promise<object|null>} - Place details or null
+ */
+async function fetchPlaceDetailsLegacy(placeId, apiKey) {
+  if (!placeId || !apiKey) return null;
+  
+  try {
+    const baseUrl = 'https://maps.googleapis.com/maps/api/place/details/json';
+    const url = new URL(baseUrl);
+    url.searchParams.set('place_id', placeId);
+    url.searchParams.set('key', apiKey);
+    url.searchParams.set('fields', 'name,rating,user_ratings_total,place_id');
+
+    const res = await fetch(url.toString());
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Place Details API failed: HTTP ${res.status} - ${text}`);
+    }
+
+    const data = await res.json();
+    
+    if (data.status === 'OK' && data.result) {
+      return {
+        name: data.result.name,
+        rating: data.result.rating,
+        user_ratings_total: data.result.user_ratings_total,
+        place_id: data.result.place_id || placeId,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error fetching place details for ${placeId}:`, error.message);
+    return null;
+  }
+}
+
 async function fetchPlacesForQuery(query, apiKey) {
-  // Google Places Text Search (legacy) endpoint.
+  // Try new Places API first, fallback to legacy if needed
+  try {
+    // New Places API (Places API (New))
+    const baseUrl = 'https://places.googleapis.com/v1/places:searchText';
+    
+    const res = await fetch(baseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        maxResultCount: 10,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      // If new API fails, try legacy
+      if (res.status === 404 || res.status === 403) {
+        console.log(`New Places API not available, trying legacy API for query: "${query}"`);
+        return await fetchPlacesForQueryLegacy(query, apiKey);
+      }
+      throw new Error(`Google Places API (New) failed: HTTP ${res.status} - ${text}`);
+    }
+
+    const data = await res.json();
+    
+    // Convert new API format to legacy format for compatibility
+    if (data.places && Array.isArray(data.places)) {
+      return data.places.map(place => ({
+        name: place.displayName?.text || place.displayName,
+        rating: place.rating,
+        user_ratings_total: place.userRatingCount,
+        place_id: place.id,
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    // Fallback to legacy API if new API fails
+    console.log(`New Places API error, trying legacy API: ${error.message}`);
+    return await fetchPlacesForQueryLegacy(query, apiKey);
+  }
+}
+
+async function fetchPlacesForQueryLegacy(query, apiKey) {
+  // Legacy Places API Text Search endpoint (fallback)
   const baseUrl = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
 
   const url = new URL(baseUrl);
@@ -84,7 +213,7 @@ async function fetchPlacesForQuery(query, apiKey) {
   const res = await fetch(url.toString());
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`Google Places Text Search failed: HTTP ${res.status} - ${text}`);
+    throw new Error(`Google Places Text Search (Legacy) failed: HTTP ${res.status} - ${text}`);
   }
 
   const data = await res.json();
@@ -92,8 +221,8 @@ async function fetchPlacesForQuery(query, apiKey) {
   // Check for Google API errors
   if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
     const errorMsg = data.error_message || data.status;
-    console.error(`Google Places API error for query "${query}": ${data.status} - ${errorMsg}`);
-    throw new Error(`Google Places API error: ${data.status} - ${errorMsg}`);
+    console.error(`Google Places API (Legacy) error for query "${query}": ${data.status} - ${errorMsg}`);
+    throw new Error(`Google Places API (Legacy) error: ${data.status} - ${errorMsg}`);
   }
   
   return Array.isArray(data?.results) ? data.results : [];
@@ -169,11 +298,49 @@ export async function onRequest(context) {
 
     // Per-restaurant search gives much better coverage than "restaurants in mall" for long mall lists.
     // Concurrency is limited to avoid timeouts / rate spikes.
+    // Track errors for debugging
+    const errors = [];
+    let successCount = 0;
+    let errorCount = 0;
+    
     const enriched = await mapWithConcurrency(restaurants, 6, async (r) => {
       try {
+        // First, check if we have a place_id mapping for this restaurant
+        const placeId = getPlaceId(r.name, mallId);
+        let match = null;
+        
+        if (placeId) {
+          // Use Place Details API for exact match
+          match = await fetchPlaceDetails(placeId, apiKey);
+          if (match) {
+            successCount++;
+            return {
+              ...r,
+              rating: typeof match.rating === 'number' ? match.rating : null,
+              reviews: typeof match.user_ratings_total === 'number' ? match.user_ratings_total : null,
+              google: {
+                place_id: match.place_id || placeId,
+                name: match.name || null,
+              },
+            };
+          }
+        }
+        
+        // Fallback to text search if no place_id or place_id lookup failed
         const query = `${r.name} ${mallQueryName}`;
         const candidates = await fetchPlacesForQuery(query, apiKey);
-        const match = pickBestMatch(r.name, candidates);
+        match = pickBestMatch(r.name, candidates);
+        
+        if (match) {
+          successCount++;
+        } else {
+          errorCount++;
+          // Log first few failures for debugging
+          if (errorCount <= 3) {
+            console.log(`No match found for "${r.name}" - found ${candidates.length} candidates`);
+          }
+        }
+        
         return {
           ...r,
           rating: typeof match?.rating === 'number' ? match.rating : null,
@@ -186,17 +353,36 @@ export async function onRequest(context) {
             : null,
         };
       } catch (e) {
-        // Log error for debugging, but gracefully degrade per-restaurant
-        console.error(`Error fetching Places data for "${r.name}":`, e.message);
+        errorCount++;
+        errors.push({ restaurant: r.name, error: e.message });
+        // Log first few errors for debugging
+        if (errors.length <= 3) {
+          console.error(`Error fetching Places data for "${r.name}":`, e.message);
+        }
         return { ...r, rating: null, reviews: null, google: null };
       }
     });
+    
+    // Log summary
+    console.log(`Leaderboard enrichment complete: ${successCount} matched, ${errorCount} failed, ${errors.length} errors`);
+    if (errors.length > 0 && errors.length <= 5) {
+      console.error('Sample errors:', errors);
+    }
 
+    // Count how many restaurants have ratings
+    const withRatings = enriched.filter(r => r.rating !== null).length;
+    const total = enriched.length;
+    
     const body = {
       mall: { id: mallId, name: mallInfo?.name, display_name: mallInfo?.display_name },
       source: 'google_places_textsearch_per_restaurant',
       cached_ttl_seconds: CACHE_TTL_SECONDS,
       restaurants: enriched,
+      _debug: {
+        total_restaurants: total,
+        restaurants_with_ratings: withRatings,
+        restaurants_without_ratings: total - withRatings,
+      },
     };
 
     const headers = new Headers();

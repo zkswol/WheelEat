@@ -108,3 +108,4 @@ If you already have a general Google API key, you can use that instead:
 - Each restaurant search is done individually for better accuracy
 - Results are cached to reduce API calls and improve performance
 
+
