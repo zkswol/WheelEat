@@ -325,11 +325,12 @@ export async function onRequest(context) {
 
     // Per-restaurant search gives much better coverage than "restaurants in mall" for long mall lists.
     // Concurrency is limited to avoid hitting Cloudflare's "Too many subrequests" limit (typically 50 per request).
-    // With 66 restaurants, we need to keep concurrency low (2-3) to stay under the limit.
+    // With 66 restaurants, we need to keep concurrency low (2) to stay under the limit.
     // Track errors for debugging
     const errors = [];
     let successCount = 0;
     let errorCount = 0;
+    let subrequestLimitHit = false; // Track if we've hit the subrequest limit
     
     // Reduced concurrency from 6 to 2 to avoid "Too many subrequests" error
     // Each restaurant may make 1-2 API calls (Place Details + possibly Text Search fallback)
@@ -376,7 +377,30 @@ export async function onRequest(context) {
             console.error(`   - apiKey length: ${apiKey ? apiKey.length : 0}`);
             if (isSubrequestLimit) {
               console.error(`   - ⚠️ Likely hit Cloudflare "Too many subrequests" limit`);
+              subrequestLimitHit = true; // Mark that we've hit the limit
             }
+            
+            // If we've hit the subrequest limit, skip text search fallback to save API calls
+            if (subrequestLimitHit) {
+              console.error(`   - Skipping text search fallback (subrequest limit reached)`);
+              debugInfo = { 
+                method: 'place_details', 
+                place_id: placeId, 
+                found: false, 
+                fallback: 'skipped_due_to_limit',
+                apiKey_present: !!apiKey,
+                apiKey_length: apiKey ? apiKey.length : 0,
+                error: 'Too many subrequests (Cloudflare limit)'
+              };
+              return {
+                ...r,
+                rating: null,
+                reviews: null,
+                google: null,
+                _debug: debugInfo,
+              };
+            }
+            
             console.error(`   - Falling back to text search`);
             debugInfo = { 
               method: 'place_details', 
@@ -391,6 +415,17 @@ export async function onRequest(context) {
         }
         
         // Fallback to text search if no place_id or place_id lookup failed
+        // Skip if we've hit the subrequest limit
+        if (subrequestLimitHit && !placeId) {
+          console.log(`Skipping text search for "${r.name}" (subrequest limit reached)`);
+          return {
+            ...r,
+            rating: null,
+            reviews: null,
+            google: null,
+            _debug: { method: 'text_search', found: false, skipped: 'subrequest_limit' },
+          };
+        }
         // Try multiple query variations to improve match rate
         const queries = [
           `${r.name} ${mallQueryName}`,
