@@ -96,3 +96,4 @@ const enriched = await mapWithConcurrency(restaurants, 1, async (r) => {
 
 The issue is **not** with the API key or Place Details API - it's a **Cloudflare Pages Functions limit**. By reducing concurrency from 6 to 2, we should be able to process more restaurants before hitting the limit.
 
+
