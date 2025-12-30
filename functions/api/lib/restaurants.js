@@ -65,7 +65,7 @@ export const MALL_RESTAURANTS = {
     ["Village Grocer", "LG1-05 to LG1-09", "LG1", "Supermarket", false],
     ["Yellow Bento", "L2-01", "L2", "Japanese Cuisine", false],
     ["Yonny", "L1-32", "L1", "Chinese & Taiwanese", false],
-    ["Yakiniku Smile MY", "TBD", "TBD", "Japanese Cuisine", false],
+    ["Yakiniku Smile MY", "LG-01", "LG", "Japanese Cuisine", false],
     ["Yama by Hojichaya", "L2-10A", "L2", "Japanese Cuisine", true],
     ["Yogurt Planet", "LG1-19", "LG1", "Snacks & Desserts", true],
     ["Zus Coffee", "L1-02", "L1", "Coffee & Cafes", true],
