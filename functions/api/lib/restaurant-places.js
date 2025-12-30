@@ -66,6 +66,7 @@ export const RESTAURANT_PLACE_IDS = {
     "Village Grocer": "ChIJ62Aw2n5NzDERTd44eZMgGOY",
     "Yellow Bento": "ChIJV3px97hNzDERKOTIJP2xa_A",
     "Yonny": "ChIJvZ4-FgBNzDERI9PrDGjXUJk",
+    "Yakiniku Smile MY": "ChIJAZwHG39NzDER0Ihb1EDixdw",
     "Yama by Hojichaya": "ChIJf6iO6AJNzDERKMBCHF558PU",
     "Yogurt Planet": "ChIJ-8jlX-BNzDERb36a1NwUwvY",
     "Zus Coffee": "ChIJ_1aKt4dNzDER7CIPbAMs2U8",
