@@ -4,15 +4,41 @@
 import { getRestaurantsByCategories } from './lib/restaurants.js';
 import { getD1Database, generateUUID, getCurrentTimestamp } from './lib/d1.js';
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
-import { RESTAURANT_PLACE_IDS } from './lib/restaurant-places.js';
+import { RESTAURANT_PLACE_IDS, getRestaurantCoordinates } from './lib/restaurant-places.js';
 
-// Helper function to get Google Maps URL from restaurant name and mall ID
-function getGoogleMapsUrl(restaurantName, mallId) {
+// Helper function to get Google Maps URLs from restaurant name and mall ID
+// Returns both web URL (for desktop) and mobile deep link (for Google Maps app on mobile)
+function getGoogleMapsUrls(restaurantName, mallId) {
   const placeId = RESTAURANT_PLACE_IDS[mallId]?.[restaurantName];
-  if (!placeId) {
-    return null;
+  const coordinates = getRestaurantCoordinates(restaurantName, mallId);
+
+  if (!placeId && !coordinates) {
+    return { web: null, mobile: null };
   }
-  return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+
+  // Web URL - works well for desktop browsers
+  const webUrl = placeId 
+    ? `https://www.google.com/maps/place/?q=place_id:${placeId}`
+    : null;
+
+  // Mobile deep link - works better for Google Maps app on mobile devices
+  // Uses coordinates which the Maps app handles better than place_id
+  let mobileUrl = null;
+  if (coordinates) {
+    // Format: comgooglemaps://?center=LAT,LNG&zoom=15&q=name
+    mobileUrl = `comgooglemaps://?center=${coordinates.lat},${coordinates.lng}&zoom=15`;
+    if (restaurantName) {
+      mobileUrl += `&q=${encodeURIComponent(restaurantName)}`;
+    }
+  } else if (placeId) {
+    // Fallback if no coordinates available (shouldn't happen with new data)
+    mobileUrl = `https://www.google.com/maps/search/?api=1&query=place_id:${placeId}`;
+  }
+
+  return { 
+    web: webUrl,
+    mobile: mobileUrl
+  };
 }
 
 export async function onRequest(context) {
@@ -84,8 +110,8 @@ export async function onRequest(context) {
         // Continue even if database insert fails
       }
 
-      // Get Google Maps URL for the restaurant
-      const googleMapsUrl = getGoogleMapsUrl(selectedRestaurant.name, mallId);
+      // Get Google Maps URLs for the restaurant (both web and mobile versions)
+      const googleMapsUrls = getGoogleMapsUrls(selectedRestaurant.name, mallId);
 
       return jsonResponse({
         restaurant_name: selectedRestaurant.name,
@@ -95,7 +121,8 @@ export async function onRequest(context) {
         timestamp: new Date(timestamp * 1000).toISOString(),
         spin_id: spinId,
         logo: selectedRestaurant.logo,
-        google_maps_url: googleMapsUrl || null
+        google_maps_url: googleMapsUrls.web || null,
+        google_maps_mobile_url: googleMapsUrls.mobile || null
       });
     } catch (dbError) {
       console.error('Database error:', dbError);

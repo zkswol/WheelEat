@@ -75,6 +75,95 @@ export const RESTAURANT_PLACE_IDS = {
 };
 
 /**
+ * Restaurant coordinates for mobile Google Maps deep linking
+ * Sunway Square Mall base coordinates: 3.0438°N, 101.5761°E
+ * Each restaurant has been assigned approximate coordinates within the mall
+ */
+export const RESTAURANT_COORDINATES = {
+  sunway_square: {
+    "103 Coffee": { lat: 3.0437, lng: 101.5761 },
+    "A'Decade": { lat: 3.0440, lng: 101.5762 },
+    "Armoury Steakhouse": { lat: 3.0436, lng: 101.5760 },
+    "BESTORE": { lat: 3.0437, lng: 101.5761 },
+    "Black Canyon": { lat: 3.0437, lng: 101.5761 },
+    "Ba Shu Jia Yan": { lat: 3.0436, lng: 101.5760 },
+    "Beutea": { lat: 3.0435, lng: 101.5759 },
+    "Bread History": { lat: 3.0435, lng: 101.5759 },
+    "Chagee": { lat: 3.0437, lng: 101.5761 },
+    "Coffee Bean": { lat: 3.0437, lng: 101.5761 },
+    "Christine's Bakery Cafe": { lat: 3.0437, lng: 101.5761 },
+    "CHUCHAT": { lat: 3.0437, lng: 101.5761 },
+    "ChaPanda": { lat: 3.0440, lng: 101.5762 },
+    "CU Mart": { lat: 3.0440, lng: 101.5762 },
+    "Come Buy Yakiniku": { lat: 3.0436, lng: 101.5760 },
+    "Count (Flower Drum)": { lat: 3.0436, lng: 101.5760 },
+    "Chatramue": { lat: 3.0435, lng: 101.5759 },
+    "DOZO": { lat: 3.0437, lng: 101.5761 },
+    "Empire Sushi": { lat: 3.0435, lng: 101.5759 },
+    "Far Coffee": { lat: 3.0440, lng: 101.5762 },
+    "Fong Woh Tong": { lat: 3.0435, lng: 101.5759 },
+    "Gong Luck Cafe": { lat: 3.0437, lng: 101.5761 },
+    "Gokoku Japanese Bakery": { lat: 3.0437, lng: 101.5761 },
+    "Gong Cha": { lat: 3.0440, lng: 101.5762 },
+    "Hock Kee Kopitiam": { lat: 3.0437, lng: 101.5761 },
+    "Han Bun Sik": { lat: 3.0440, lng: 101.5762 },
+    "Happy Potato": { lat: 3.0440, lng: 101.5762 },
+    "I'm Bagel": { lat: 3.0440, lng: 101.5762 },
+    "I LIKE & Yogurt In A Can": { lat: 3.0440, lng: 101.5762 },
+    "JP & CO": { lat: 3.0437, lng: 101.5761 },
+    "Kanteen": { lat: 3.0437, lng: 101.5761 },
+    "Kenangan Coffee": { lat: 3.0440, lng: 101.5762 },
+    "Kedai Kopi Malaya": { lat: 3.0435, lng: 101.5759 },
+    "Kha Coffee Roaster": { lat: 3.0435, lng: 101.5759 },
+    "LLAO LLAO": { lat: 3.0437, lng: 101.5761 },
+    "Luckin": { lat: 3.0437, lng: 101.5761 },
+    "Manjoe": { lat: 3.0437, lng: 101.5761 },
+    "Mix.Store": { lat: 3.0436, lng: 101.5760 },
+    "Mr. Wu": { lat: 3.0436, lng: 101.5760 },
+    "Missy Sushi": { lat: 3.0436, lng: 101.5760 },
+    "Nasi Lemak Shop": { lat: 3.0435, lng: 101.5759 },
+    "Nine Dragon Char Chan Teng (Kowloon Cafe)": { lat: 3.0435, lng: 101.5759 },
+    "Nippon Sushi": { lat: 3.0435, lng: 101.5759 },
+    "Odon Beyond": { lat: 3.0437, lng: 101.5761 },
+    "One Dish One Taste": { lat: 3.0435, lng: 101.5759 },
+    "Pak Curry": { lat: 3.0435, lng: 101.5759 },
+    "Ramen Mob": { lat: 3.0437, lng: 101.5761 },
+    "Richeese Factory": { lat: 3.0435, lng: 101.5759 },
+    "Sweetie": { lat: 3.0435, lng: 101.5759 },
+    "Salad Atelier": { lat: 3.0437, lng: 101.5761 },
+    "Super Matcha": { lat: 3.0437, lng: 101.5761 },
+    "Shabuyaki by Nippon Sushi": { lat: 3.0436, lng: 101.5760 },
+    "Stuff'D": { lat: 3.0435, lng: 101.5759 },
+    "Subway": { lat: 3.0435, lng: 101.5759 },
+    "The Public House": { lat: 3.0437, lng: 101.5761 },
+    "Tealive Plus": { lat: 3.0440, lng: 101.5762 },
+    "Tang Gui Fei Tanghulu": { lat: 3.0440, lng: 101.5762 },
+    "The Walking Hotpot Signature": { lat: 3.0440, lng: 101.5762 },
+    "The Chicken Rice Shop": { lat: 3.0435, lng: 101.5759 },
+    "Village Grocer": { lat: 3.0435, lng: 101.5759 },
+    "Yellow Bento": { lat: 3.0440, lng: 101.5762 },
+    "Yonny": { lat: 3.0437, lng: 101.5761 },
+    "Yakiniku Smile MY": { lat: 3.0436, lng: 101.5760 },
+    "Yama by Hojichaya": { lat: 3.0440, lng: 101.5762 },
+    "Yogurt Planet": { lat: 3.0435, lng: 101.5759 },
+    "Zus Coffee": { lat: 3.0437, lng: 101.5761 },
+    "Zok Noodle House": { lat: 3.0440, lng: 101.5762 },
+  },
+};
+
+/**
+ * Get coordinates for a restaurant
+ * @param {string} restaurantName - Name of the restaurant
+ * @param {string} mallId - Mall ID (default: 'sunway_square')
+ * @returns {Object|null} - {lat, lng} or null if not found
+ */
+export function getRestaurantCoordinates(restaurantName, mallId = 'sunway_square') {
+  const mallCoordinates = RESTAURANT_COORDINATES[mallId];
+  if (!mallCoordinates) return null;
+  return mallCoordinates[restaurantName] || null;
+}
+
+/**
  * Get place_id for a restaurant
  * @param {string} restaurantName - Name of the restaurant
  * @param {string} mallId - Mall ID (default: 'sunway_square')

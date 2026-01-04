@@ -28,6 +28,21 @@ function ResultModal({ result, onClose, onSpinAgain }) {
     console.log('No logo path for restaurant:', result.restaurant_name, 'Result object:', result);
   }
 
+  // Get the appropriate Google Maps URL based on device type
+  // Mobile devices with Google Maps app installed will use the deep link (comgooglemaps://)
+  // Other devices and browsers will use the web URL
+  const getGoogleMapsLink = () => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && result.google_maps_mobile_url) {
+      return result.google_maps_mobile_url;
+    }
+    
+    return result.google_maps_url;
+  };
+
+  const googleMapsLink = getGoogleMapsLink();
+
   return (
     <div className="result-modal-overlay" onClick={onClose}>
       <div className="result-modal" onClick={(e) => e.stopPropagation()}>
@@ -72,7 +87,7 @@ function ResultModal({ result, onClose, onSpinAgain }) {
             {result.google_maps_url && (
               <div className="result-detail-item">
                 <a 
-                  href={result.google_maps_url} 
+                  href={googleMapsLink} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="google-maps-link"
