@@ -421,7 +421,6 @@ function App() {
     console.log('===============================');
 
     // Track page view
-    const savedUser = localStorage.getItem('wheeleat_user');
     let userId = null;
     if (savedUser) {
       try {
