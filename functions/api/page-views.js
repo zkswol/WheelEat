@@ -80,47 +80,87 @@ export async function onRequestGet(context) {
 
   try {
     const db = getD1Database(env);
+    const url = new URL(request.url);
+    
+    // Parse query parameters for date filtering
+    const date = url.searchParams.get('date'); // YYYY-MM-DD format
+    const startDate = url.searchParams.get('start_date'); // YYYY-MM-DD format
+    const endDate = url.searchParams.get('end_date'); // YYYY-MM-DD format
+    const days = url.searchParams.get('days'); // Number of days (e.g., 7, 30)
+    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
 
-    // Get total page views
-    const totalResult = await db.prepare('SELECT COUNT(*) as count FROM page_views').first();
+    // Build WHERE clause for date filtering
+    let whereClause = '';
+    let bindParams = [];
+    
+    if (date) {
+      // Filter by specific date
+      const startTimestamp = Math.floor(new Date(date + 'T00:00:00Z').getTime() / 1000);
+      const endTimestamp = Math.floor(new Date(date + 'T23:59:59Z').getTime() / 1000);
+      whereClause = 'WHERE timestamp >= ? AND timestamp <= ?';
+      bindParams = [startTimestamp, endTimestamp];
+    } else if (startDate && endDate) {
+      // Filter by date range
+      const startTimestamp = Math.floor(new Date(startDate + 'T00:00:00Z').getTime() / 1000);
+      const endTimestamp = Math.floor(new Date(endDate + 'T23:59:59Z').getTime() / 1000);
+      whereClause = 'WHERE timestamp >= ? AND timestamp <= ?';
+      bindParams = [startTimestamp, endTimestamp];
+    } else if (days) {
+      // Filter by last N days
+      whereClause = 'WHERE timestamp > strftime(\'%s\', \'now\', \'-' + parseInt(days, 10) + ' days\')';
+    } else {
+      // Default: last 30 days for daily views
+      whereClause = 'WHERE timestamp > strftime(\'%s\', \'now\', \'-30 days\')';
+    }
+
+    // Get total page views (with date filter if specified)
+    const totalQuery = whereClause ? `SELECT COUNT(*) as count FROM page_views ${whereClause}` : 'SELECT COUNT(*) as count FROM page_views';
+    const totalResult = await (bindParams.length > 0 
+      ? db.prepare(totalQuery).bind(...bindParams).first()
+      : db.prepare(totalQuery).first());
     const totalViews = totalResult?.count || 0;
 
-    // Get unique visitors (by user_id or user_agent)
-    const uniqueVisitorsResult = await db.prepare(
-      `SELECT COUNT(DISTINCT COALESCE(user_id, user_agent)) as count FROM page_views`
-    ).first();
+    // Get unique visitors (with date filter if specified)
+    const uniqueQuery = whereClause 
+      ? `SELECT COUNT(DISTINCT COALESCE(user_id, user_agent)) as count FROM page_views ${whereClause}`
+      : `SELECT COUNT(DISTINCT COALESCE(user_id, user_agent)) as count FROM page_views`;
+    const uniqueVisitorsResult = await (bindParams.length > 0
+      ? db.prepare(uniqueQuery).bind(...bindParams).first()
+      : db.prepare(uniqueQuery).first());
     const uniqueVisitors = uniqueVisitorsResult?.count || 0;
 
-    // Get views by path
-    const viewsByPath = await db.prepare(
-      `SELECT path, COUNT(*) as count 
-       FROM page_views 
-       GROUP BY path 
-       ORDER BY count DESC 
-       LIMIT 20`
-    ).all();
+    // Get views by path (with date filter if specified)
+    const pathQuery = whereClause
+      ? `SELECT path, COUNT(*) as count FROM page_views ${whereClause} GROUP BY path ORDER BY count DESC LIMIT ?`
+      : `SELECT path, COUNT(*) as count FROM page_views GROUP BY path ORDER BY count DESC LIMIT ?`;
+    const viewsByPath = await (bindParams.length > 0
+      ? db.prepare(pathQuery).bind(...bindParams, limit).all()
+      : db.prepare(pathQuery).bind(limit).all());
 
-    // Get daily page views (last 30 days)
-    const dailyViews = await db.prepare(
-      `SELECT 
-         DATE(datetime(timestamp, 'unixepoch')) as date,
-         COUNT(*) as count
-       FROM page_views
-       WHERE timestamp > strftime('%s', 'now', '-30 days')
-       GROUP BY date
-       ORDER BY date DESC`
-    ).all();
+    // Get daily page views (with date filter if specified)
+    const dailyQuery = whereClause
+      ? `SELECT DATE(datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count FROM page_views ${whereClause} GROUP BY date ORDER BY date DESC`
+      : `SELECT DATE(datetime(timestamp, 'unixepoch')) as date, COUNT(*) as count FROM page_views GROUP BY date ORDER BY date DESC`;
+    const dailyViews = await (bindParams.length > 0
+      ? db.prepare(dailyQuery).bind(...bindParams).all()
+      : db.prepare(dailyQuery).all());
 
-    // Get recent page views (last 20)
-    const recentViews = await db.prepare(
-      `SELECT id, path, user_id, timestamp, created_at 
-       FROM page_views 
-       ORDER BY timestamp DESC 
-       LIMIT 20`
-    ).all();
+    // Get recent page views (with date filter if specified)
+    const recentQuery = whereClause
+      ? `SELECT id, path, user_id, timestamp, created_at, datetime(timestamp, 'unixepoch') as date_time FROM page_views ${whereClause} ORDER BY timestamp DESC LIMIT ?`
+      : `SELECT id, path, user_id, timestamp, created_at, datetime(timestamp, 'unixepoch') as date_time FROM page_views ORDER BY timestamp DESC LIMIT ?`;
+    const recentViews = await (bindParams.length > 0
+      ? db.prepare(recentQuery).bind(...bindParams, limit).all()
+      : db.prepare(recentQuery).bind(limit).all());
 
     return jsonResponse({
       success: true,
+      filters: {
+        date: date || null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        days: days || null,
+      },
       summary: {
         total_views: totalViews,
         unique_visitors: uniqueVisitors,
