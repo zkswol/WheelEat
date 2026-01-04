@@ -25,10 +25,11 @@ function getGoogleMapsUrls(restaurantName, mallId) {
   // This works better on mobile devices and opens the Maps app if installed
   let mobileUrl = null;
   if (coordinates && restaurantName) {
-    // Use Google Maps search URL with location and restaurant name
-    // Format: https://maps.google.com/maps/search/RestaurantName/@LAT,LNG,15z
+    // Use Google Maps search URL with location and restaurant name + Sunway Square
+    // Format: https://maps.google.com/maps/search/RestaurantName+Sunway+Square/@LAT,LNG,15z
     // The intent:// wrapper will open in Google Maps app on Android
-    const mapsSearchUrl = `https://maps.google.com/maps/search/${encodeURIComponent(restaurantName)}/@${coordinates.lat},${coordinates.lng},15z`;
+    const searchQuery = `${restaurantName} Sunway Square`;
+    const mapsSearchUrl = `https://maps.google.com/maps/search/${encodeURIComponent(searchQuery)}/@${coordinates.lat},${coordinates.lng},15z`;
     mobileUrl = `intent://${mapsSearchUrl.replace('https://', '')}#Intent;scheme=https;action=android.intent.action.VIEW;package=com.google.android.apps.maps;end`;
   } else if (webUrl) {
     // Fallback to web URL
