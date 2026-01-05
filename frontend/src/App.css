@@ -135,6 +135,7 @@ header h1 {
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: flex-start;
   cursor: pointer;
   font-weight: 650;
   color: #2a2a2a;
@@ -142,6 +143,8 @@ header h1 {
 
 .header-menu-label {
   flex: 1;
+  text-align: left;
+  min-width: 0;
 }
 
 .header-menu-item:hover {
