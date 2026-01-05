@@ -6,7 +6,6 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
-import AdSense from './components/AdSense';
 import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
 
@@ -223,12 +222,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     <div className="App">
       <div className="container">
         <header>
-          <AdSense 
-            slotId={process.env.REACT_APP_ADSENSE_HEADER_SLOT} 
-            className="ad-container-header" 
-            format="horizontal" 
-            label="Header Ad"
-          />
           <div className="header-bar">
             <div />
             <h1 style={{ margin: 0 }}>🍽️ WheelEat</h1>
