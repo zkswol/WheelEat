@@ -7,6 +7,7 @@ import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
 import AdSense from './components/AdSense';
+import RestaurantAdBanner from './components/RestaurantAdBanner';
 import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
 
@@ -222,6 +223,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   return (
     <div className="App">
       <div className="container">
+        {/* Restaurant Ad Banner at the top */}
+        <RestaurantAdBanner variant="top" />
+        
         <header>
           <AdSense 
             slotId={process.env.REACT_APP_ADSENSE_HEADER_SLOT} 
