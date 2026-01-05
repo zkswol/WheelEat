@@ -14,7 +14,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       rating: '4.4',
       reviews: '36 reviews',
       description: 'Authentic Malaysian cuisine with free-flow sambal!',
-      image: '/images/ads/nls-restaurant.jpg', // Restaurant interior
+      image: '/images/ads/nls-restaurant.jpg', // Restaurant interior - First picture
       placeholderBg: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
       cta: 'Visit Restaurant'
     },
@@ -22,7 +22,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       type: 'dish',
       dishName: 'Nasi Lemak',
       description: 'Traditional coconut rice with fried chicken, sambal, and sides',
-      image: '/images/ads/nasi-lemak.jpg',
+      image: '/images/ads/nasi-lemak.jpg', // Dish 1
       placeholderBg: 'linear-gradient(135deg, #feca57 0%, #ff9ff3 100%)',
       price: 'From RM 8.90',
       cta: 'Order Now'
@@ -31,7 +31,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       type: 'dish',
       dishName: 'Rendang',
       description: 'Slow-cooked beef in rich, aromatic spices',
-      image: '/images/ads/rendang.jpg',
+      image: '/images/ads/rendang.jpg', // Dish 2
       placeholderBg: 'linear-gradient(135deg, #8b4513 0%, #a0522d 100%)',
       price: 'From RM 12.90',
       cta: 'Order Now'
@@ -40,16 +40,25 @@ function RestaurantAdBanner({ variant = 'top' }) {
       type: 'dish',
       dishName: 'Laksa',
       description: 'Spicy coconut curry noodles with prawns and vegetables',
-      image: '/images/ads/laksa.jpg',
+      image: '/images/ads/laksa.jpg', // Dish 3
       placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
       price: 'From RM 10.90',
       cta: 'Order Now'
     },
     {
       type: 'dish',
+      dishName: 'Laksa Special',
+      description: 'Rich coconut curry noodles with fresh herbs and toppings',
+      image: '/images/ads/laksa-2.jpg', // Dish 4
+      placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
+      price: 'From RM 11.90',
+      cta: 'Order Now'
+    },
+    {
+      type: 'dish',
       dishName: 'Lontong Sayur',
       description: 'Rice cakes in creamy coconut curry soup',
-      image: '/images/ads/lontong.jpg',
+      image: '/images/ads/lontong.jpg', // Dish 5
       placeholderBg: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
       price: 'From RM 9.90',
       cta: 'Order Now'
