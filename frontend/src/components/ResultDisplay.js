@@ -1,6 +1,7 @@
 import React from 'react';
 import './ResultDisplay.css';
 import { getRestaurantLocation } from '../data/restaurantLocations';
+import { getPriceRange } from '../data/priceRanges';
 
 function ResultDisplay({ result }) {
   if (!result) return null;
@@ -38,6 +39,10 @@ function ResultDisplay({ result }) {
           <div className="result-detail-item">
             <span className="detail-label">🍽️ Category:</span>
             <span className="detail-value">{result.category}</span>
+          </div>
+          <div className="result-detail-item">
+            <span className="detail-label">💰 Price Range:</span>
+            <span className="detail-value">{getPriceRange(result.restaurant_name)}</span>
           </div>
         </div>
         <div className="result-timestamp">
