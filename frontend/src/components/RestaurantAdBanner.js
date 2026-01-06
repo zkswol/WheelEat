@@ -16,52 +16,131 @@ function RestaurantAdBanner({ variant = 'top' }) {
       description: 'Authentic Malaysian cuisine with free-flow sambal!',
       image: '/images/ads/nls-restaurant.jpg', // Restaurant interior - First picture
       placeholderBg: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
-      cta: 'Visit Restaurant'
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M' // NLS Nasi Lemak Shop
     },
     {
       type: 'dish',
+      restaurantName: 'NLS Nasi Lemak Shop',
       dishName: 'Nasi Lemak Goreng',
       description: 'Traditional coconut rice with fried chicken, sambal, and sides',
       image: '/images/ads/nasi-lemak-goreng.jpg', // Dish 1
       placeholderBg: 'linear-gradient(135deg, #feca57 0%, #ff9ff3 100%)',
       price: 'From RM 18.90',
-      cta: 'Visit Restaurant'
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
     },
     {
       type: 'dish',
+      restaurantName: 'NLS Nasi Lemak Shop',
       dishName: 'Rendang Daging',
       description: 'Slow-cooked beef in rich, aromatic spices',
       image: '/images/ads/rendang-daging.jpg', // Dish 2
       placeholderBg: 'linear-gradient(135deg, #8b4513 0%, #a0522d 100%)',
       price: 'From RM 16.90',
-      cta: 'Visit Restaurant'
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
     },
     {
       type: 'dish',
+      restaurantName: 'NLS Nasi Lemak Shop',
       dishName: 'Asam Laksa',
       description: 'Spicy coconut curry noodles with prawns and vegetables',
       image: '/images/ads/asam-laksa.jpg', // Dish 3
       placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
       price: 'From RM 19.50',
-      cta: 'Visit Restaurant'
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
     },
     {
       type: 'dish',
+      restaurantName: 'NLS Nasi Lemak Shop',
       dishName: 'Prawn Noodles',
       description: 'Rich coconut curry noodles with fresh herbs and toppings',
       image: '/images/ads/prawnNoodle.jpg', // Dish 4
       placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
       price: 'From RM 21.50',
-      cta: 'Visit Restaurant'
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
     },
     {
       type: 'dish',
+      restaurantName: 'NLS Nasi Lemak Shop',
       dishName: 'Lontong Nasi Impit',
       description: 'Rice cakes in creamy coconut curry soup',
       image: '/images/ads/lontong-nasi-impit.jpg', // Dish 5
       placeholderBg: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
       price: 'From RM 20.50',
-      cta: 'Visit Restaurant'
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+    },
+    // Far Coffee slides
+    {
+      type: 'profile',
+      restaurantName: 'Far Coffee',
+      location: 'Sunway Square Mall',
+      rating: '4.3',
+      reviews: '28 reviews',
+      description: 'Specialty coffee and cozy ambiance!',
+      image: '/images/logo/far-coffee.png', // Far Coffee logo
+      placeholderBg: 'linear-gradient(135deg, #8b6f47 0%, #a0826d 100%)',
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA' // Far Coffee
+    },
+    {
+      type: 'dish',
+      restaurantName: 'Far Coffee',
+      dishName: 'Espresso',
+      description: 'Espresso',
+      image: '/images/logo/far-coffee.png',
+      placeholderBg: 'linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%)',
+      price: 'RM 7.90',
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+    },
+    {
+      type: 'dish',
+      restaurantName: 'Far Coffee',
+      dishName: 'Cafe Latte',
+      description: 'Cafe Latte',
+      image: '/images/logo/far-coffee.png',
+      placeholderBg: 'linear-gradient(135deg, #d2b48c 0%, #c9a961 100%)',
+      price: 'RM 10.90',
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+    },
+    {
+      type: 'dish',
+      restaurantName: 'Far Coffee',
+      dishName: 'Americano',
+      description: 'Americano',
+      image: '/images/logo/far-coffee.png',
+      placeholderBg: 'linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%)',
+      price: 'RM 9.90',
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+    },
+    {
+      type: 'dish',
+      restaurantName: 'Far Coffee',
+      dishName: 'Cappuccino',
+      description: 'Cappuccino',
+      image: '/images/logo/far-coffee.png',
+      placeholderBg: 'linear-gradient(135deg, #d2b48c 0%, #c9a961 100%)',
+      price: 'RM 10.90',
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+    },
+    {
+      type: 'dish',
+      restaurantName: 'Far Coffee',
+      dishName: 'Some Cookie',
+      description: 'Some Cookie',
+      image: '/images/logo/far-coffee.png',
+      placeholderBg: 'linear-gradient(135deg, #d4a574 0%, #c9a961 100%)',
+      price: 'RM 8.90',
+      cta: 'Visit Restaurant',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
     }
   ];
 
@@ -77,8 +156,8 @@ function RestaurantAdBanner({ variant = 'top' }) {
   const currentSlideData = slides[currentSlide];
   const isProfile = currentSlideData.type === 'profile';
 
-  // Google Maps Place ID for NLS Nasi Lemak Shop
-  const GOOGLE_PLACE_ID = 'ChIJsTe-CQBNzDERQ8ON2zveN4M';
+  // Get the place ID from the current slide
+  const GOOGLE_PLACE_ID = currentSlideData.placeId;
 
   const handleClick = (e) => {
     // Prevent event bubbling if clicking on button specifically
