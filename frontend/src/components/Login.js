@@ -33,8 +33,21 @@ function GuestIcon() {
 function GuestLogin({ onLogin }) {
   const handleGuestLogin = () => {
     console.log('Guest login clicked');
-    // Generate temporary guest ID
-    const guestId = 'guest_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    // Use the same anon ID as the wheel uses, so vouchers are tied to a single guest ID
+    let guestId = null;
+    try {
+      const key = 'wheeleat_anon_user_id';
+      const existing = localStorage.getItem(key);
+      if (existing) {
+        guestId = existing;
+      } else {
+        const created = `anon_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+        localStorage.setItem(key, created);
+        guestId = created;
+      }
+    } catch {
+      guestId = `anon_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+    }
     
     const guestUser = {
       id: guestId,
