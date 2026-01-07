@@ -637,31 +637,26 @@ function App() {
   }, []);
 
   // Handle login success
-  const handleLogin = async (userData) => {
+  const handleLogin = async (userData, previousUserId = null) => {
     console.log('=== handleLogin called ===');
     console.log('User data received:', userData);
+    console.log('Previous user ID (from Login component):', previousUserId);
     
-    // Check if previous user was a guest (before localStorage is updated)
-    const previousUserStr = localStorage.getItem('wheeleat_user');
-    let previousUserId = null;
+    // Check if previous user was a guest
     let isGuest = false;
-    
-    if (previousUserStr) {
-      try {
-        const previousUser = JSON.parse(previousUserStr);
-        previousUserId = previousUser.id;
-        isGuest = previousUser.loginType === 'guest' || 
-                  String(previousUserId || '').startsWith('anon_') ||
-                  String(previousUserId || '').startsWith('guest_');
-      } catch (e) {
-        console.debug('Could not parse previous user:', e);
-      }
+    if (previousUserId) {
+      isGuest = String(previousUserId).startsWith('anon_') ||
+                String(previousUserId).startsWith('guest_');
+      console.log('Previous user was guest:', isGuest);
     }
     
     // If previous user was a guest and new user is Google, transfer vouchers
     if (isGuest && previousUserId && userData && userData.loginType !== 'guest') {
       try {
-        console.log('Transferring vouchers from guest to Google account...');
+        console.log('Transferring vouchers from guest to Google account...', {
+          guestUserId: previousUserId,
+          googleUserId: userData.id
+        });
         const result = await transferVouchers({
           guestUserId: previousUserId,
           googleUserId: userData.id,
@@ -669,17 +664,28 @@ function App() {
         console.log('Voucher transfer result:', result);
         if (result.transferred > 0) {
           console.log(`Successfully transferred ${result.transferred} voucher(s) to Google account`);
+        } else {
+          console.log('No vouchers were transferred (may already exist or none found)');
         }
       } catch (e) {
         console.error('Failed to transfer vouchers:', e);
+        console.error('Transfer error details:', e.message, e.stack);
         // Continue with login even if transfer fails
       }
+    } else {
+      console.log('Skipping transfer:', { isGuest, previousUserId, hasUserData: !!userData, userLoginType: userData?.loginType });
     }
     
     setUser(userData);
     setShowLogin(false);
     console.log('User state updated');
     // User data is already saved in localStorage by Login component
+    
+    // Small delay to ensure database updates are reflected before vouchers refresh
+    // The useEffect in WheelEatApp will automatically refresh vouchers when user.id changes
+    setTimeout(() => {
+      console.log('Vouchers should refresh automatically via useEffect');
+    }, 500);
   };
 
   const handleLogout = () => {

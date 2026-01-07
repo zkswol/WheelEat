@@ -25,7 +25,18 @@ export async function onRequest(context) {
   }
 
   try {
+    // Check if DB binding exists
+    if (!env.DB) {
+      console.error('Missing D1 database binding. env.DB is undefined.');
+      return jsonResponse({ 
+        error: 'Database not configured', 
+        message: 'D1 database binding is missing.',
+      }, 500);
+    }
+
     const db = getD1Database(env);
+
+    console.log('Transferring vouchers:', { guestUserId, googleUserId });
 
     // Get all active vouchers for the guest user
     const guestVouchers = await db
@@ -36,6 +47,8 @@ export async function onRequest(context) {
       )
       .bind(String(guestUserId))
       .all();
+
+    console.log(`Found ${guestVouchers.results?.length || 0} active vouchers for guest user`);
 
     if (!guestVouchers.results || guestVouchers.results.length === 0) {
       return jsonResponse({

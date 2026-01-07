@@ -49,9 +49,9 @@ function GuestLogin({ onLogin }) {
     console.log('Saving guest user to localStorage:', guestUser);
     localStorage.setItem('wheeleat_user', JSON.stringify(guestUser));
     
-    // Trigger login callback
+    // Trigger login callback (no previous user for guest login)
     console.log('Calling onLogin callback for guest');
-    onLogin(guestUser);
+    onLogin(guestUser, null);
   };
 
   return (
@@ -109,6 +109,19 @@ function GoogleLoginButton({ onLogin }) {
           accessToken: tokenResponse.access_token
         };
 
+        // Get previous user ID BEFORE saving new user (for voucher transfer)
+        let previousUserId = null;
+        try {
+          const previousUserStr = localStorage.getItem('wheeleat_user');
+          if (previousUserStr) {
+            const previousUser = JSON.parse(previousUserStr);
+            previousUserId = previousUser.id;
+            console.log('Previous user ID for transfer:', previousUserId);
+          }
+        } catch (e) {
+          console.debug('Could not get previous user:', e);
+        }
+        
         // Save to localStorage first (for immediate UI update)
         console.log('Saving user to localStorage:', googleUser);
         localStorage.setItem('wheeleat_user', JSON.stringify(googleUser));
@@ -127,9 +140,9 @@ function GoogleLoginButton({ onLogin }) {
           // Continue anyway - user is logged in via localStorage
         }
         
-        // Trigger login callback
+        // Trigger login callback with previous user ID for voucher transfer
         console.log('Calling onLogin callback');
-        onLogin(googleUser);
+        onLogin(googleUser, previousUserId);
       } catch (error) {
         console.error('Google login error:', error);
         alert('Failed to sign in with Google. Please try again.');
