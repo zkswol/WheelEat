@@ -26,7 +26,7 @@ function formatMytExpiry(ms) {
   }
 }
 
-export default function VoucherOfferModal({ voucher, onAccept, onDecline }) {
+export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }) {
   if (!voucher) return null;
 
   const merchantName = voucher.merchant_name || 'Far Coffee';
@@ -36,6 +36,9 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline }) {
   const code = String(voucher.id || '').slice(-6).toUpperCase();
   const voucherPreview = code ? `WE-${code}` : 'WE-XXXXXX';
   const expiryLabel = formatMytExpiry(voucher.expired_at_ms);
+
+  // Check if user is a guest (not signed in with Google)
+  const isGuest = !user || user.loginType === 'guest' || String(user?.id || '').startsWith('anon_');
 
   return (
     <div className="voucher-offer-overlay" onClick={onDecline}>
@@ -76,13 +79,27 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline }) {
           </div>
         </div>
 
+        {isGuest && (
+          <div className="voucher-offer-guest-notice" style={{
+            padding: '12px',
+            margin: '16px 0',
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '8px',
+            color: '#856404',
+            fontSize: '14px',
+            textAlign: 'center'
+          }}>
+            ⚠️ Sign in with Google to keep this voucher. Guest users cannot save vouchers.
+          </div>
+        )}
         <div className="voucher-offer-actions">
           <button
             type="button"
             className="voucher-offer-primary"
             onClick={() => onAccept?.()}
           >
-            Keep {amountLabel}
+            {isGuest ? 'Sign in to Keep' : `Keep ${amountLabel}`}
           </button>
           <button type="button" className="voucher-offer-secondary" onClick={onDecline}>
             Remove voucher

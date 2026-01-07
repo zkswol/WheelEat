@@ -21,33 +21,22 @@ export function malaysiaToday5pmUtcMs(nowUtcMs = Date.now()) {
   return Date.UTC(y, m, d, 9, 0, 0, 0);
 }
 
-export async function ensureFarCoffeeVoucherRow(env, nowMs = Date.now()) {
+/**
+ * Get voucher from database. Returns null if voucher doesn't exist.
+ * You must manually create vouchers in the database.
+ */
+async function getFarCoffeeVoucher(env) {
   const db = getD1Database(env);
-  const expiryMs = malaysiaToday5pmUtcMs(nowMs);
-
-  // Create the voucher if it doesn't exist. If it exists, update only expiry timestamp.
-  await db
-    .prepare(
-      `INSERT INTO vouchers (
-         id, merchant_name, value_rm, total_qty, remaining_qty, expires_at_ms, created_at_ms, updated_at_ms
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET
-         expires_at_ms = excluded.expires_at_ms,
-         updated_at_ms = excluded.updated_at_ms`
-    )
-    .bind(
-      FAR_COFFEE_VOUCHER_ID,
-      FAR_COFFEE_MERCHANT_NAME,
-      FAR_COFFEE_VALUE_RM,
-      FAR_COFFEE_TOTAL_QTY,
-      FAR_COFFEE_TOTAL_QTY,
-      expiryMs,
-      nowMs,
-      nowMs
-    )
-    .run();
-
-  return { voucherId: FAR_COFFEE_VOUCHER_ID, expiryMs };
+  const row = await db
+    .prepare(`SELECT id, expires_at_ms FROM vouchers WHERE id=?`)
+    .bind(FAR_COFFEE_VOUCHER_ID)
+    .first();
+  
+  if (!row) {
+    return null;
+  }
+  
+  return { voucherId: row.id, expiryMs: Number(row.expires_at_ms) };
 }
 
 /**
@@ -56,7 +45,12 @@ export async function ensureFarCoffeeVoucherRow(env, nowMs = Date.now()) {
  */
 export async function expireFarCoffeeVouchers(env, nowMs = Date.now()) {
   const db = getD1Database(env);
-  const expiryMs = malaysiaToday5pmUtcMs(nowMs);
+  
+  // Check if voucher exists
+  const voucher = await getFarCoffeeVoucher(env);
+  if (!voucher) {
+    return { expiredCount: 0, expiryMs: 0 };
+  }
 
   // Use a transactional batch + SQLite `changes()` so restock count matches exactly how many rows were expired.
   // This avoids relying on data-modifying CTEs/RETURNING behavior differences across D1 builds.
@@ -81,13 +75,7 @@ export async function expireFarCoffeeVouchers(env, nowMs = Date.now()) {
   ]);
   const expiredCount = Number(batchRes?.[0]?.meta?.changes || 0);
 
-  // Keep expiry in sync for today.
-  await db
-    .prepare(`UPDATE vouchers SET expires_at_ms=?, updated_at_ms=? WHERE id=?`)
-    .bind(expiryMs, nowMs, FAR_COFFEE_VOUCHER_ID)
-    .run();
-
-  return { expiredCount, expiryMs };
+  return { expiredCount, expiryMs: voucher.expiryMs };
 }
 
 /**
@@ -102,10 +90,44 @@ export async function expireFarCoffeeVouchers(env, nowMs = Date.now()) {
  */
 export async function spinFarCoffeeVoucher(env, userId, nowMs = Date.now()) {
   const db = getD1Database(env);
-  const { expiryMs } = await ensureFarCoffeeVoucherRow(env, nowMs);
+  
+  // Get voucher from database (must be created manually)
+  const voucher = await getFarCoffeeVoucher(env);
+  if (!voucher) {
+    return {
+      won: false,
+      reason: 'voucher_not_found',
+      remainingQty: 0,
+      expiryMs: 0,
+      message: 'Voucher not found. Please create the voucher in the database first.',
+    };
+  }
+  
+  const { expiryMs } = voucher;
 
   // Expire past vouchers first (restock)
   await expireFarCoffeeVouchers(env, nowMs);
+
+  // Check if user already has an active voucher for this restaurant
+  const existingVoucher = await db
+    .prepare(
+      `SELECT id FROM user_vouchers
+       WHERE user_id = ? 
+         AND voucher_id = ?
+         AND status = 'active'`
+    )
+    .bind(String(userId), FAR_COFFEE_VOUCHER_ID)
+    .first();
+
+  if (existingVoucher) {
+    return {
+      won: false,
+      reason: 'already_has_voucher',
+      remainingQty: 0,
+      expiryMs,
+      message: 'You already have an active voucher for this restaurant. Only one voucher per restaurant is allowed.',
+    };
+  }
 
   if (nowMs >= expiryMs) {
     const row = await db.prepare(`SELECT remaining_qty FROM vouchers WHERE id=?`).bind(FAR_COFFEE_VOUCHER_ID).first();
@@ -241,7 +263,18 @@ export async function removeFarCoffeeUserVoucher(env, userId, userVoucherId, now
 
 export async function listFarCoffeeUserVouchers(env, userId, nowMs = Date.now()) {
   const db = getD1Database(env);
-  const { expiryMs } = await ensureFarCoffeeVoucherRow(env, nowMs);
+  
+  // Get voucher from database (must be created manually)
+  const voucher = await getFarCoffeeVoucher(env);
+  if (!voucher) {
+    // Return empty list if voucher doesn't exist
+    return {
+      vouchers: [],
+      expiryMs: 0,
+    };
+  }
+  
+  const { expiryMs } = voucher;
   await expireFarCoffeeVouchers(env, nowMs);
 
   const res = await db

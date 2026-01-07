@@ -294,6 +294,21 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   };
 
   const handleKeepVoucher = async () => {
+    // Check if user is a guest (not signed in with Google)
+    const isGuest = !user || user.loginType === 'guest' || String(user?.id || '').startsWith('anon_');
+    
+    if (isGuest) {
+      // Guest users must sign in with Google to keep vouchers
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      // Show login modal
+      onShowLogin();
+      // Show message
+      alert('Please sign in with Google to keep your voucher. Guest users cannot save vouchers.');
+      return;
+    }
+
+    // User is signed in with Google - allow keeping voucher
     setShowVoucherOffer(false);
     setPendingVoucher(null);
     await refreshVouchers();
@@ -498,6 +513,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
           voucher={pendingVoucher}
           onAccept={handleKeepVoucher}
           onDecline={handleDeclineVoucher}
+          user={user}
         />
       ) : null}
 
