@@ -242,4 +242,13 @@ export async function removeUserVoucher({ userId, userVoucherId }) {
   });
 }
 
+export async function transferVouchers({ guestUserId, googleUserId }) {
+  const url = buildUrl('/api/vouchers/transfer');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ guest_user_id: guestUserId, google_user_id: googleUserId }),
+  });
+}
+
 

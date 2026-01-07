@@ -15,6 +15,7 @@ import {
   spinFarCoffeeVoucher,
   fetchUserVouchers,
   removeUserVoucher,
+  transferVouchers,
 } from './services/api';
 import Leaderboard from './components/Leaderboard';
 import VoucherOfferModal from './components/VoucherOfferModal';
@@ -636,9 +637,45 @@ function App() {
   }, []);
 
   // Handle login success
-  const handleLogin = (userData) => {
+  const handleLogin = async (userData) => {
     console.log('=== handleLogin called ===');
     console.log('User data received:', userData);
+    
+    // Check if previous user was a guest (before localStorage is updated)
+    const previousUserStr = localStorage.getItem('wheeleat_user');
+    let previousUserId = null;
+    let isGuest = false;
+    
+    if (previousUserStr) {
+      try {
+        const previousUser = JSON.parse(previousUserStr);
+        previousUserId = previousUser.id;
+        isGuest = previousUser.loginType === 'guest' || 
+                  String(previousUserId || '').startsWith('anon_') ||
+                  String(previousUserId || '').startsWith('guest_');
+      } catch (e) {
+        console.debug('Could not parse previous user:', e);
+      }
+    }
+    
+    // If previous user was a guest and new user is Google, transfer vouchers
+    if (isGuest && previousUserId && userData && userData.loginType !== 'guest') {
+      try {
+        console.log('Transferring vouchers from guest to Google account...');
+        const result = await transferVouchers({
+          guestUserId: previousUserId,
+          googleUserId: userData.id,
+        });
+        console.log('Voucher transfer result:', result);
+        if (result.transferred > 0) {
+          console.log(`Successfully transferred ${result.transferred} voucher(s) to Google account`);
+        }
+      } catch (e) {
+        console.error('Failed to transfer vouchers:', e);
+        // Continue with login even if transfer fails
+      }
+    }
+    
     setUser(userData);
     setShowLogin(false);
     console.log('User state updated');
