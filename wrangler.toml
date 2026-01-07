@@ -1,6 +1,12 @@
 name = "wheeleat"
 compatibility_date = "2024-01-01"
 
+# D1 Database binding for vouchers
+[[d1_databases]]
+binding = "DB"
+database_name = "wheeleat-db"
+database_id = "de316b9e-e2dc-466e-bba1-02edaca0fb4b"
+
 [env.production]
 name = "wheeleat"
 
