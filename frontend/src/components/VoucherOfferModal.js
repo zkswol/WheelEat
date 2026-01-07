@@ -7,15 +7,35 @@ function formatRm(value) {
   return `RM${n.toFixed(0)}`;
 }
 
-export default function VoucherOfferModal({ result, valueRm = 10, onAccept, onDecline }) {
-  if (!result) return null;
+function formatMytExpiry(ms) {
+  if (!ms) return 'Today 5:00 PM (MYT)';
+  try {
+    // Malaysia Time (GMT+8)
+    const d = new Date(Number(ms));
+    return d.toLocaleString('en-MY', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return 'Today 5:00 PM (MYT)';
+  }
+}
 
-  const restaurantName = result.restaurant_name || 'Selected restaurant';
-  const logoPath = result.logo ? `/${result.logo}` : null;
-  const amountLabel = formatRm(valueRm);
+export default function VoucherOfferModal({ voucher, onAccept, onDecline }) {
+  if (!voucher) return null;
 
-  const code = String(result.spin_id || '').slice(-6).toUpperCase();
+  const merchantName = voucher.merchant_name || 'Far Coffee';
+  const logoPath = voucher.logo ? `/${voucher.logo}` : null;
+  const amountLabel = formatRm(voucher.value_rm ?? 10);
+
+  const code = String(voucher.id || '').slice(-6).toUpperCase();
   const voucherPreview = code ? `WE-${code}` : 'WE-XXXXXX';
+  const expiryLabel = formatMytExpiry(voucher.expired_at_ms);
 
   return (
     <div className="voucher-offer-overlay" onClick={onDecline}>
@@ -30,7 +50,7 @@ export default function VoucherOfferModal({ result, valueRm = 10, onAccept, onDe
 
         <div className="voucher-offer-header">
           <div className="voucher-offer-title">Limited-time voucher</div>
-          <div className="voucher-offer-subtitle">Use it at your spun restaurant</div>
+          <div className="voucher-offer-subtitle">Use it at {merchantName}</div>
         </div>
 
         <div className="voucher-offer-card">
@@ -38,7 +58,7 @@ export default function VoucherOfferModal({ result, valueRm = 10, onAccept, onDe
             <div className="voucher-offer-logoWrap">
               <img
                 src={logoPath}
-                alt={restaurantName}
+                alt={merchantName}
                 className="voucher-offer-logo"
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -47,12 +67,12 @@ export default function VoucherOfferModal({ result, valueRm = 10, onAccept, onDe
             </div>
           ) : null}
 
-          <div className="voucher-offer-restaurantName">{restaurantName}</div>
+          <div className="voucher-offer-restaurantName">{merchantName}</div>
           <div className="voucher-offer-code" aria-label="Voucher code preview">
             {voucherPreview}
           </div>
           <div className="voucher-offer-terms">
-            {amountLabel} off. One voucher per spin. Subject to availability.
+            {amountLabel} off. Expires: {expiryLabel} (MYT).
           </div>
         </div>
 
@@ -60,12 +80,12 @@ export default function VoucherOfferModal({ result, valueRm = 10, onAccept, onDe
           <button
             type="button"
             className="voucher-offer-primary"
-            onClick={() => onAccept?.({ valueRm })}
+            onClick={() => onAccept?.()}
           >
-            Claim {amountLabel}
+            Keep {amountLabel}
           </button>
           <button type="button" className="voucher-offer-secondary" onClick={onDecline}>
-            No thanks
+            Remove voucher
           </button>
         </div>
       </div>

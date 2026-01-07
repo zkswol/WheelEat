@@ -215,4 +215,31 @@ export async function getPageViewStats() {
   return await fetchJson(url);
 }
 
+// =========================
+// Demo Voucher System (Far Coffee)
+// =========================
+
+export async function spinFarCoffeeVoucher(userId) {
+  const url = buildUrl('/api/vouchers/spin');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+export async function fetchUserVouchers(userId) {
+  const url = buildUrl('/api/vouchers', { user_id: userId });
+  return await fetchJson(url);
+}
+
+export async function removeUserVoucher({ userId, userVoucherId }) {
+  const url = buildUrl('/api/vouchers/remove');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, user_voucher_id: userVoucherId }),
+  });
+}
+
 

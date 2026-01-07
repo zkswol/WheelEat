@@ -6,7 +6,16 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
-import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
+import {
+  fetchMalls,
+  fetchCategories,
+  fetchRestaurants,
+  spinWheel,
+  trackPageView,
+  spinFarCoffeeVoucher,
+  fetchUserVouchers,
+  removeUserVoucher,
+} from './services/api';
 import Leaderboard from './components/Leaderboard';
 import VoucherOfferModal from './components/VoucherOfferModal';
 import VoucherWalletModal from './components/VoucherWalletModal';
@@ -44,55 +53,43 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [vouchers, setVouchers] = useState([]);
   const [showVoucherWallet, setShowVoucherWallet] = useState(false);
   const [showVoucherOffer, setShowVoucherOffer] = useState(false);
+  const [pendingVoucher, setPendingVoucher] = useState(null);
   const lastVoucherOfferKeyRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
-  const VOUCHER_STORAGE_KEY = 'wheeleat_vouchers';
-
-  function loadVouchers() {
+  function getOrCreateAnonUserId() {
     try {
-      const raw = localStorage.getItem(VOUCHER_STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      const key = 'wheeleat_anon_user_id';
+      const existing = localStorage.getItem(key);
+      if (existing) return existing;
+      const created = `anon_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+      localStorage.setItem(key, created);
+      return created;
     } catch {
-      return [];
+      return `anon_${Math.random().toString(16).slice(2)}_${Date.now()}`;
     }
   }
 
-  function saveVouchers(next) {
-    setVouchers(next);
+  const effectiveUserId = user?.id ? String(user.id) : getOrCreateAnonUserId();
+
+  async function refreshVouchers() {
     try {
-      localStorage.setItem(VOUCHER_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // ignore quota / privacy errors
+      const data = await fetchUserVouchers(effectiveUserId);
+      // Only Far Coffee vouchers exist in this demo; keep only active vouchers in UI.
+      const active = Array.isArray(data?.vouchers) ? data.vouchers.filter((v) => v.status === 'active') : [];
+      setVouchers(active);
+    } catch (e) {
+      console.debug('Failed to load vouchers:', e);
+      setVouchers([]);
     }
   }
 
-  function createVoucherFromResult(spinResult, valueRm) {
-    const spinId = spinResult?.spin_id || null;
-    const spinKey = spinId || `${spinResult?.restaurant_name || 'restaurant'}-${spinResult?.timestamp || Date.now()}`;
-    const short = String(spinKey).slice(-6).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
-
-    return {
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      spinId,
-      code: `WE-${short.padStart(6, 'X').slice(0, 6)}`,
-      valueRm,
-      restaurantName: spinResult?.restaurant_name || 'Selected restaurant',
-      logo: spinResult?.logo || null,
-      category: spinResult?.category || null,
-      issuedAt: new Date().toISOString(),
-      status: 'saved',
-    };
-  }
-
-  // Load vouchers once on mount (persisted in localStorage)
+  // Load vouchers for the current user (or anon user) on mount and when user changes.
   useEffect(() => {
-    saveVouchers(loadVouchers());
+    refreshVouchers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectiveUserId]);
 
   // Close header menu on outside click / escape
   useEffect(() => {
@@ -125,8 +122,21 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     const key = result.spin_id || `${result.restaurant_name || ''}-${result.timestamp || ''}`;
     if (lastVoucherOfferKeyRef.current === key) return;
     lastVoucherOfferKeyRef.current = key;
-    setShowVoucherOffer(true);
-  }, [showResult, result]);
+
+    // Demo voucher spin: Far Coffee RM10 (guaranteed win if stock available + before expiry)
+    (async () => {
+      try {
+        const out = await spinFarCoffeeVoucher(effectiveUserId);
+        if (out?.won && out?.userVoucher) {
+          setPendingVoucher(out.userVoucher);
+          setShowVoucherOffer(true);
+          await refreshVouchers();
+        }
+      } catch (e) {
+        console.debug('Voucher spin failed:', e);
+      }
+    })();
+  }, [showResult, result, effectiveUserId]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
@@ -278,27 +288,44 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     setShowResult(false);
     setResult(null);
     setShowVoucherOffer(false);
+    setPendingVoucher(null);
   };
 
-  const handleAcceptVoucher = ({ valueRm = 10 } = {}) => {
-    if (!result) return;
-    const v = createVoucherFromResult(result, valueRm);
-
-    // De-dupe by spinId (if present) or by code.
-    const existing = vouchers.some((x) => (v.spinId && x.spinId === v.spinId) || x.code === v.code);
-    if (!existing) {
-      saveVouchers([v, ...vouchers]);
-    }
-
+  const handleKeepVoucher = async () => {
     setShowVoucherOffer(false);
+    setPendingVoucher(null);
+    await refreshVouchers();
   };
 
-  const handleRemoveVoucher = (id) => {
-    saveVouchers(vouchers.filter((v) => v.id !== id));
+  const handleDeclineVoucher = async () => {
+    try {
+      if (pendingVoucher?.id) {
+        await removeUserVoucher({ userId: effectiveUserId, userVoucherId: pendingVoucher.id });
+      }
+    } catch (e) {
+      console.debug('Failed to remove voucher:', e);
+    } finally {
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      await refreshVouchers();
+    }
   };
 
-  const handleClearVouchers = () => {
-    saveVouchers([]);
+  const handleRemoveVoucher = async (userVoucherId) => {
+    await removeUserVoucher({ userId: effectiveUserId, userVoucherId });
+    await refreshVouchers();
+  };
+
+  const handleClearVouchers = async () => {
+    // Release all active vouchers back to inventory (demo behavior).
+    for (const v of vouchers) {
+      try {
+        await removeUserVoucher({ userId: effectiveUserId, userVoucherId: v.id });
+      } catch (e) {
+        console.debug('Failed to remove voucher during clear:', e);
+      }
+    }
+    await refreshVouchers();
   };
 
   return (
@@ -466,10 +493,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       {/* Voucher offer (pops on top of result modal) */}
       {showResult && result && showVoucherOffer ? (
         <VoucherOfferModal
-          result={result}
-          valueRm={10}
-          onAccept={handleAcceptVoucher}
-          onDecline={() => setShowVoucherOffer(false)}
+          voucher={pendingVoucher}
+          onAccept={handleKeepVoucher}
+          onDecline={handleDeclineVoucher}
         />
       ) : null}
 
