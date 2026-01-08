@@ -5,13 +5,8 @@ import { getD1Database, generateUUID, getCurrentTimestamp } from './lib/d1.js';
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 
 // POST /api/page-views - Track a page view
-export async function onRequestPost(context) {
+async function handlePost(context) {
   const { request, env } = context;
-
-  // Handle preflight OPTIONS requests
-  if (request.method === 'OPTIONS') {
-    return createCORSResponse();
-  }
 
   try {
     // Parse request body
@@ -70,13 +65,8 @@ export async function onRequestPost(context) {
 }
 
 // GET /api/page-views - Get page view statistics
-export async function onRequestGet(context) {
+async function handleGet(context) {
   const { request, env } = context;
-
-  // Handle preflight OPTIONS requests
-  if (request.method === 'OPTIONS') {
-    return createCORSResponse();
-  }
 
   try {
     const db = getD1Database(env);
@@ -185,12 +175,15 @@ export async function onRequestGet(context) {
 export async function onRequest(context) {
   const { request } = context;
 
-  if (request.method === 'GET') {
-    return onRequestGet(context);
-  } else if (request.method === 'POST') {
-    return onRequestPost(context);
-  } else if (request.method === 'OPTIONS') {
+  // Handle preflight OPTIONS requests
+  if (request.method === 'OPTIONS') {
     return createCORSResponse();
+  }
+
+  if (request.method === 'GET') {
+    return handleGet(context);
+  } else if (request.method === 'POST') {
+    return handlePost(context);
   } else {
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
