@@ -362,7 +362,7 @@ header h1 {
 
 .restaurant-list-modal {
   width: min(720px, 100%);
-  max-height: min(82vh, 720px);
+  max-height: min(92vh, 900px);
   background: white;
   border-radius: 22px;
   padding: 22px;
@@ -402,6 +402,20 @@ header h1 {
   padding-right: 4px;
   display: grid;
   gap: 10px;
+}
+
+.restaurant-list-claim {
+  border: 1px dashed rgba(102, 126, 234, 0.4);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(102, 126, 234, 0.08);
+  color: #3f4fd1;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.restaurant-list-claim:hover {
+  background: rgba(102, 126, 234, 0.14);
 }
 
 .restaurant-list-row {
@@ -513,6 +527,44 @@ header h1 {
   font-weight: 800;
 }
 
+.restaurant-detail-title {
+  font-weight: 700;
+  color: #333;
+}
+
+.restaurant-detail-info {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  display: grid;
+  gap: 12px;
+}
+
+.restaurant-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 10px;
+}
+
+.restaurant-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.restaurant-detail-label {
+  font-weight: 600;
+  color: #666;
+}
+
+.restaurant-detail-value {
+  min-width: 80px;
+  text-align: right;
+  color: #333;
+}
+
 @media (max-width: 480px) {
   .restaurant-list-row {
     padding: 10px;
@@ -521,6 +573,10 @@ header h1 {
   .restaurant-detail-modal {
     padding: 18px;
     border-radius: 18px;
+  }
+
+  .restaurant-list-modal {
+    padding: 18px;
   }
 }
 

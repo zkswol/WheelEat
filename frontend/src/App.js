@@ -691,6 +691,18 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              className="restaurant-list-claim"
+              onClick={() => {
+                if (spotlightList.length > 0) {
+                  setFeaturedDetail(spotlightList[0]);
+                }
+                setShowFeaturedDetail(true);
+              }}
+            >
+              Claim voucher
+            </button>
           </div>
         </div>
       ) : null}
@@ -724,7 +736,22 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 />
               ) : null}
             </div>
+            <div className="restaurant-detail-title">You got:</div>
             <h3>{featuredDetail.name}</h3>
+            <div className="restaurant-detail-info">
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Floor/Unit:</span>
+                <span className="restaurant-detail-value"></span>
+              </div>
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Location:</span>
+                <span className="restaurant-detail-value"></span>
+              </div>
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Category:</span>
+                <span className="restaurant-detail-value"></span>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
