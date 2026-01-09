@@ -20,6 +20,7 @@ import {
 import Leaderboard from './components/Leaderboard';
 import VoucherOfferModal from './components/VoucherOfferModal';
 import VoucherWalletModal from './components/VoucherWalletModal';
+import { getPriceRange } from './data/priceRanges';
 
 function MenuIcon() {
   return (
@@ -66,6 +67,17 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const lastVoucherOfferKeyRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
+
+  const promoMenuItems = useMemo(
+    () => [
+      { name: 'Signature Noodles', price: 'RM 18.90' },
+      { name: 'Spicy Mala Bowl', price: 'RM 22.90' },
+      { name: 'Soup Dumplings', price: 'RM 16.50' },
+      { name: 'Crispy Wontons', price: 'RM 12.90' },
+      { name: 'Iced Tea', price: 'RM 6.90' },
+    ],
+    []
+  );
 
   function getOrCreateAnonUserId() {
     try {
@@ -740,16 +752,36 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             <h3>{featuredDetail.name}</h3>
             <div className="restaurant-detail-info">
               <div className="restaurant-detail-row">
-                <span className="restaurant-detail-label">Floor/Unit:</span>
-                <span className="restaurant-detail-value"></span>
+                <span className="restaurant-detail-label">Price range:</span>
+                <span className="restaurant-detail-value">
+                  {getPriceRange(featuredDetail.name)}
+                </span>
               </div>
               <div className="restaurant-detail-row">
-                <span className="restaurant-detail-label">Location:</span>
-                <span className="restaurant-detail-value"></span>
+                <span className="restaurant-detail-label">Visit Instagram:</span>
+                <button
+                  type="button"
+                  className="restaurant-detail-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                  }}
+                >
+                  Open Instagram
+                </button>
               </div>
-              <div className="restaurant-detail-row">
-                <span className="restaurant-detail-label">Category:</span>
-                <span className="restaurant-detail-value"></span>
+            </div>
+            <div className="restaurant-detail-promo">
+              <div className="restaurant-detail-promo-title">Promotion menu</div>
+              <div className="restaurant-detail-promo-track">
+                {promoMenuItems.map((item, index) => (
+                  <div key={`${item.name}-${index}`} className="promo-card">
+                    <div className="promo-card-image" aria-hidden="true">
+                      <div className="promo-card-icon">Meal</div>
+                    </div>
+                    <div className="promo-card-name">{item.name}</div>
+                    <div className="promo-card-price">{item.price}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
