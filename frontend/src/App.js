@@ -801,14 +801,20 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               </div>
               <div className="restaurant-detail-row">
                 <span className="restaurant-detail-label">Give me a review:</span>
-                <a
-                  className="restaurant-detail-link"
-                  href={getGoogleMapsLink(featuredDetail.name) || '#'}
-                  target={getGoogleMapsLink(featuredDetail.name) ? '_blank' : undefined}
-                  rel={getGoogleMapsLink(featuredDetail.name) ? 'noopener noreferrer' : undefined}
-                >
-                  Open Google Maps
-                </a>
+                {getGoogleMapsLink(featuredDetail.name) ? (
+                  <a
+                    className="restaurant-detail-link"
+                    href={getGoogleMapsLink(featuredDetail.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Google Maps
+                  </a>
+                ) : (
+                  <button type="button" className="restaurant-detail-link" disabled>
+                    Open Google Maps
+                  </button>
+                )}
               </div>
             </div>
             <div className="restaurant-detail-promo">
