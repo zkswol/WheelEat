@@ -25,6 +25,8 @@ export async function onRequest(context) {
   const userId = body?.user_id;
   const merchantName = body?.merchant_name || body?.restaurant_name;
   const merchantLogo = body?.merchant_logo || body?.logo || null;
+  const valueRm = body?.value_rm;
+  const minSpendRm = body?.min_spend_rm;
   if (!userId) return jsonResponse({ detail: 'user_id is required' }, 400);
   if (isGuestUserId(userId)) return jsonResponse({ detail: 'Google login required to claim vouchers' }, 401);
   if (!merchantName) return jsonResponse({ detail: 'merchant_name is required' }, 400);
@@ -45,6 +47,8 @@ export async function onRequest(context) {
       userId: String(userId),
       merchantName: String(merchantName),
       merchantLogo: merchantLogo ? String(merchantLogo) : null,
+      valueRm: valueRm === undefined || valueRm === null ? undefined : Number(valueRm),
+      minSpendRm: minSpendRm === undefined || minSpendRm === null ? undefined : Number(minSpendRm),
       nowMs,
     });
     return jsonResponse(out);

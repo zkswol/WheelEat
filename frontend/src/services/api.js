@@ -219,12 +219,18 @@ export async function getPageViewStats() {
 // Voucher System (per restaurant)
 // =========================
 
-export async function claimRestaurantVoucher({ userId, merchantName, merchantLogo }) {
+export async function claimRestaurantVoucher({ userId, merchantName, merchantLogo, valueRm, minSpendRm }) {
   const url = buildUrl('/api/vouchers/spin');
   return await fetchJson(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, merchant_name: merchantName, merchant_logo: merchantLogo }),
+    body: JSON.stringify({
+      user_id: userId,
+      merchant_name: merchantName,
+      merchant_logo: merchantLogo,
+      value_rm: valueRm,
+      min_spend_rm: minSpendRm,
+    }),
   });
 }
 

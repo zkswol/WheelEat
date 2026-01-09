@@ -1,7 +1,8 @@
 -- Voucher System (testing / restaurant-of-the-day)
 --
 -- Scenario / Rules:
--- - Voucher value: RM10
+-- - Voucher value: RM5
+-- - Min spend: RM30
 -- - Total vouchers per restaurant: 5
 -- - Claim requires Google login (enforced by frontend; backend expects a stable user_id)
 -- - Voucher expiry: 24 hours from claim time
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS vouchers (
   merchant_name TEXT NOT NULL,
   merchant_logo TEXT,
   value_rm INTEGER NOT NULL CHECK (value_rm > 0),
+  min_spend_rm INTEGER NOT NULL CHECK (min_spend_rm >= 0),
   total_qty INTEGER NOT NULL CHECK (total_qty >= 0),
   remaining_qty INTEGER NOT NULL CHECK (remaining_qty >= 0),
   created_at_ms INTEGER NOT NULL,

@@ -1,7 +1,8 @@
 import { generateUUID, getD1Database } from './d1.js';
 
 // Demo configuration
-export const DEFAULT_VOUCHER_VALUE_RM = 10;
+export const DEFAULT_VOUCHER_VALUE_RM = 5;
+export const DEFAULT_MIN_SPEND_RM = 30;
 export const DEFAULT_TOTAL_QTY_PER_RESTAURANT = 5;
 export const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -24,19 +25,27 @@ export function voucherTypeIdForRestaurant(merchantName) {
  * Ensure a voucher "type" row exists for a merchant.
  * Stock is per-merchant (5 total, 5 remaining by default).
  */
-export async function ensureVoucherForMerchant(env, merchantName, nowMs = Date.now(), merchantLogo = null) {
+export async function ensureVoucherForMerchant(
+  env,
+  merchantName,
+  nowMs = Date.now(),
+  merchantLogo = null,
+  valueRm = DEFAULT_VOUCHER_VALUE_RM,
+  minSpendRm = DEFAULT_MIN_SPEND_RM
+) {
   const db = getD1Database(env);
   const voucherId = voucherTypeIdForRestaurant(merchantName);
 
   await db
     .prepare(
       `INSERT INTO vouchers (
-         id, merchant_name, merchant_logo, value_rm, total_qty, remaining_qty, created_at_ms, updated_at_ms
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         id, merchant_name, merchant_logo, value_rm, min_spend_rm, total_qty, remaining_qty, created_at_ms, updated_at_ms
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          merchant_name = excluded.merchant_name,
          merchant_logo = COALESCE(excluded.merchant_logo, vouchers.merchant_logo),
          value_rm = excluded.value_rm,
+         min_spend_rm = excluded.min_spend_rm,
          total_qty = excluded.total_qty,
          updated_at_ms = excluded.updated_at_ms`
     )
@@ -44,7 +53,8 @@ export async function ensureVoucherForMerchant(env, merchantName, nowMs = Date.n
       voucherId,
       String(merchantName),
       merchantLogo ? String(merchantLogo) : null,
-      DEFAULT_VOUCHER_VALUE_RM,
+      Number(valueRm),
+      Number(minSpendRm),
       DEFAULT_TOTAL_QTY_PER_RESTAURANT,
       DEFAULT_TOTAL_QTY_PER_RESTAURANT,
       nowMs,
@@ -108,11 +118,11 @@ export async function expireDueVouchers(env, nowMs = Date.now(), limit = 200) {
  * - User voucher expires 24 hours from claim.
  * - Only one active voucher per user per restaurant (optional, but keeps UX sane).
  */
-export async function claimVoucher(env, { userId, merchantName, merchantLogo = null, nowMs = Date.now() }) {
+export async function claimVoucher(env, { userId, merchantName, merchantLogo = null, valueRm = DEFAULT_VOUCHER_VALUE_RM, minSpendRm = DEFAULT_MIN_SPEND_RM, nowMs = Date.now() }) {
   const db = getD1Database(env);
   await expireDueVouchers(env, nowMs);
 
-  const voucherId = await ensureVoucherForMerchant(env, merchantName, nowMs, merchantLogo);
+  const voucherId = await ensureVoucherForMerchant(env, merchantName, nowMs, merchantLogo, valueRm, minSpendRm);
 
   // Prevent duplicate active voucher per user+merchant
   const existing = await db
@@ -185,7 +195,8 @@ export async function claimVoucher(env, { userId, merchantName, merchantLogo = n
       voucher_id: voucherId,
       merchant_name: String(merchantName),
       merchant_logo: merchantLogo ? String(merchantLogo) : null,
-      value_rm: DEFAULT_VOUCHER_VALUE_RM,
+      value_rm: Number(valueRm),
+      min_spend_rm: Number(minSpendRm),
       status: 'active',
       issued_at_ms: issuedAtMs,
       expired_at_ms: expiredAtMs,
@@ -258,7 +269,7 @@ export async function listUserVouchers(env, { userId, nowMs = Date.now() }) {
     .prepare(
       `SELECT uv.id, uv.user_id, uv.voucher_id, uv.status,
               uv.issued_at_ms, uv.expired_at_ms, uv.removed_at_ms, uv.used_at_ms,
-              v.merchant_name, v.merchant_logo, v.value_rm
+              v.merchant_name, v.merchant_logo, v.value_rm, v.min_spend_rm
        FROM user_vouchers uv
        JOIN vouchers v ON v.id = uv.voucher_id
        WHERE uv.user_id = ?

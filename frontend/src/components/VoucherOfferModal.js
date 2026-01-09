@@ -32,6 +32,8 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
   const merchantName = voucher.merchant_name || 'Far Coffee';
   const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
   const amountLabel = formatRm(voucher.value_rm ?? 10);
+  const minSpendRm = Number(voucher.min_spend_rm);
+  const minSpendLabel = Number.isFinite(minSpendRm) ? `Min spend RM${minSpendRm}` : null;
 
   const code = String(voucher.id || '').slice(-6).toUpperCase();
   const voucherPreview = code ? `WE-${code}` : 'WE-XXXXXX';
@@ -53,7 +55,9 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
 
         <div className="voucher-offer-header">
           <div className="voucher-offer-title">Limited-time voucher</div>
-          <div className="voucher-offer-subtitle">Use it at {merchantName}</div>
+          <div className="voucher-offer-subtitle">
+            {minSpendLabel ? `${minSpendLabel} • ` : ''}Use it at {merchantName}
+          </div>
         </div>
 
         <div className="voucher-offer-card">
@@ -75,6 +79,7 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
             {voucherPreview}
           </div>
           <div className="voucher-offer-terms">
+            {minSpendLabel ? `${minSpendLabel}. ` : ''}
             {amountLabel} off. Expires: {expiryLabel} (MYT).
           </div>
         </div>

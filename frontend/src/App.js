@@ -165,7 +165,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     setPendingVoucher({
       merchant_name: result.restaurant_name || 'Restaurant',
       merchant_logo: result.logo || null,
-      value_rm: 10,
+      value_rm: 5,
+      min_spend_rm: 30,
     });
     setShowVoucherOffer(true);
   }, [showResult, result]);
@@ -177,6 +178,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     const merchantName = pendingVoucherClaim?.merchant_name;
     if (!merchantName) return;
     const merchantLogo = pendingVoucherClaim?.merchant_logo || null;
+    const valueRm = pendingVoucherClaim?.value_rm;
+    const minSpendRm = pendingVoucherClaim?.min_spend_rm;
 
     (async () => {
       try {
@@ -184,6 +187,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
           userId: effectiveUserId,
           merchantName,
           merchantLogo,
+          valueRm,
+          minSpendRm,
         });
         if (out?.won) {
           await refreshVouchers();
@@ -407,6 +412,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
         setPendingVoucherClaim?.({
           merchant_name: merchantName,
           merchant_logo: pendingVoucher?.merchant_logo || pendingVoucher?.logo || null,
+          value_rm: pendingVoucher?.value_rm,
+          min_spend_rm: pendingVoucher?.min_spend_rm,
         });
       }
       setShowVoucherOffer(false);
@@ -423,12 +430,16 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
       return;
     }
     const merchantLogo = pendingVoucher?.merchant_logo || pendingVoucher?.logo || null;
+    const valueRm = pendingVoucher?.value_rm;
+    const minSpendRm = pendingVoucher?.min_spend_rm;
 
     try {
       const out = await claimRestaurantVoucher({
         userId: effectiveUserId,
         merchantName,
         merchantLogo,
+        valueRm,
+        minSpendRm,
       });
       if (out?.won) {
         await refreshVouchers();
@@ -754,10 +765,13 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                               type="button"
                               className="voucher-card-cta"
                               onClick={() => {
+                                const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
+                                const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
                                 setPendingVoucher({
                                   merchant_name: r.name,
                                   merchant_logo: r.logo || null,
-                                  value_rm: 10,
+                                  value_rm: valueRm,
+                                  min_spend_rm: minSpendRm,
                                 });
                                 setShowVoucherOffer(true);
                               }}
@@ -881,10 +895,13 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                       type="button"
                       className="voucher-card-cta"
                       onClick={() => {
+                        const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
+                        const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
                         setPendingVoucher({
                           merchant_name: featuredDetail.name,
                           merchant_logo: featuredDetail.logo || null,
-                          value_rm: 10,
+                          value_rm: valueRm,
+                          min_spend_rm: minSpendRm,
                         });
                         setShowVoucherOffer(true);
                       }}
