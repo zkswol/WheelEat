@@ -21,6 +21,7 @@ import Leaderboard from './components/Leaderboard';
 import VoucherOfferModal from './components/VoucherOfferModal';
 import VoucherWalletModal from './components/VoucherWalletModal';
 import { getPriceRange } from './data/priceRanges';
+import { getGoogleMapsLink } from './data/googleMapsLinks';
 
 function MenuIcon() {
   return (
@@ -75,6 +76,15 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       { name: 'Soup Dumplings', price: 'RM 16.50' },
       { name: 'Crispy Wontons', price: 'RM 12.90' },
       { name: 'Iced Tea', price: 'RM 6.90' },
+    ],
+    []
+  );
+
+  const promoVouchers = useMemo(
+    () => [
+      { value: 'RM 5', minSpend: 'Min spend RM 30' },
+      { value: 'RM 5', minSpend: 'Min spend RM 30' },
+      { value: 'RM 5', minSpend: 'Min spend RM 30' },
     ],
     []
   );
@@ -703,18 +713,26 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className="restaurant-list-claim"
-              onClick={() => {
-                if (spotlightList.length > 0) {
-                  setFeaturedDetail(spotlightList[0]);
-                }
-                setShowFeaturedDetail(true);
-              }}
-            >
-              Claim voucher
-            </button>
+            <div className="voucher-card-grid">
+              {promoVouchers.map((voucher, index) => (
+                <div key={`list-voucher-${index}`} className="voucher-card">
+                  <div className="voucher-card-value">{voucher.value}</div>
+                  <div className="voucher-card-min">{voucher.minSpend}</div>
+                  <button
+                    type="button"
+                    className="voucher-card-cta"
+                    onClick={() => {
+                      if (spotlightList.length > 0) {
+                        setFeaturedDetail(spotlightList[0]);
+                      }
+                      setShowFeaturedDetail(true);
+                    }}
+                  >
+                    Collect voucher
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}
@@ -769,6 +787,17 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                   Open Instagram
                 </button>
               </div>
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Give me a review:</span>
+                <a
+                  className="restaurant-detail-link"
+                  href={getGoogleMapsLink(featuredDetail.name) || '#'}
+                  target={getGoogleMapsLink(featuredDetail.name) ? '_blank' : undefined}
+                  rel={getGoogleMapsLink(featuredDetail.name) ? 'noopener noreferrer' : undefined}
+                >
+                  Open Google Maps
+                </a>
+              </div>
             </div>
             <div className="restaurant-detail-promo">
               <div className="restaurant-detail-promo-title">Promotion menu</div>
@@ -780,6 +809,20 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     </div>
                     <div className="promo-card-name">{item.name}</div>
                     <div className="promo-card-price">{item.price}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="restaurant-detail-vouchers">
+              <div className="restaurant-detail-promo-title">Collect voucher</div>
+              <div className="voucher-card-grid">
+                {promoVouchers.map((voucher, index) => (
+                  <div key={`voucher-${index}`} className="voucher-card">
+                    <div className="voucher-card-value">{voucher.value}</div>
+                    <div className="voucher-card-min">{voucher.minSpend}</div>
+                    <button type="button" className="voucher-card-cta">
+                      Collect voucher
+                    </button>
                   </div>
                 ))}
               </div>
