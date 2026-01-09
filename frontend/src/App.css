@@ -293,8 +293,6 @@ header h1 {
   text-align: left;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: grid;
-  gap: 8px;
 }
 
 .spotlight-card:hover {
@@ -306,6 +304,17 @@ header h1 {
   font-size: 1.1rem;
   font-weight: 800;
   color: #2d3748;
+}
+
+.spotlight-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spotlight-details {
+  display: grid;
+  gap: 6px;
 }
 
 .spotlight-logo {

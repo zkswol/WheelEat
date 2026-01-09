@@ -543,10 +543,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                   type="button"
                   className="spotlight-card"
                   onClick={() => setShowRestaurantList(true)}
-                  aria-label="Open restaurant list"
+                  aria-label="Open featured restaurants"
                 >
                   {spotlightList.length > 0 ? (
-                    <>
+                    <div className="spotlight-content">
                       <div className="spotlight-logo">
                         {spotlightList[spotlightIndex]?.logo ? (
                           <img
@@ -558,16 +558,18 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                           />
                         ) : null}
                       </div>
-                      <div className="spotlight-name">
-                        {spotlightList[spotlightIndex]?.name}
+                      <div className="spotlight-details">
+                        <div className="spotlight-name">
+                          {spotlightList[spotlightIndex]?.name}
+                        </div>
+                        <div className="spotlight-meta">
+                          {spotlightList[spotlightIndex]?.category || 'Category'}
+                          {spotlightList[spotlightIndex]?.unit
+                            ? ` | ${spotlightList[spotlightIndex]?.unit}`
+                            : ''}
+                        </div>
                       </div>
-                      <div className="spotlight-meta">
-                        {spotlightList[spotlightIndex]?.category || 'Category'}
-                        {spotlightList[spotlightIndex]?.unit
-                          ? ` | ${spotlightList[spotlightIndex]?.unit}`
-                          : ''}
-                      </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="spotlight-empty">Loading restaurants...</div>
                   )}
@@ -650,12 +652,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             >
               X
             </button>
-            <h2>All restaurants</h2>
+            <h2>Restaurant of the day</h2>
             <div className="restaurant-list-count">
-              {allRestaurants.length} total
+              {spotlightList.length} total
             </div>
             <div className="restaurant-list-scroll">
-              {allRestaurants.map((r) => (
+              {spotlightList.map((r) => (
                 <div key={r.name} className="restaurant-list-row">
                   <div className="restaurant-list-name">{r.name}</div>
                   <div className="restaurant-list-meta">
