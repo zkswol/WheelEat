@@ -724,7 +724,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                           <div key={`${r.name}-voucher-${index}`} className="voucher-card">
                             <div className="voucher-card-value">{voucher.value}</div>
                             <div className="voucher-card-info">
-                              <div className="voucher-card-min">{voucher.minSpend}</div>
+                            <div className="voucher-card-min">
+                              {voucher.minSpend} in {voucher.restaurant}
+                            </div>
                               <div className="voucher-card-left">
                                 {voucher.left} vouchers left
                               </div>
@@ -847,7 +849,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                   <div key={`voucher-${index}`} className="voucher-card">
                     <div className="voucher-card-value">{voucher.value}</div>
                     <div className="voucher-card-info">
-                      <div className="voucher-card-min">{voucher.minSpend}</div>
+                      <div className="voucher-card-min">
+                        {voucher.minSpend} in {voucher.restaurant}
+                      </div>
                       <div className="voucher-card-left">{voucher.left} vouchers left</div>
                     </div>
                     <button type="button" className="voucher-card-cta">
