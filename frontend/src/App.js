@@ -43,12 +43,16 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
+  const [allRestaurants, setAllRestaurants] = useState([]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard'
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showRestaurantList, setShowRestaurantList] = useState(false);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [spotlightList, setSpotlightList] = useState([]);
   const menuButtonRef = useRef(null);
   const menuRef = useRef(null);
   const [vouchers, setVouchers] = useState([]);
@@ -266,6 +270,49 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     }
   }, [mallId]);
 
+  // Load full restaurant list for spotlight (not filtered by category or dietary)
+  useEffect(() => {
+    if (!mallId || categories.length === 0) {
+      setAllRestaurants([]);
+      return;
+    }
+
+    fetchRestaurants({ categories, mallId, dietaryNeed: 'any' })
+      .then((data) => setAllRestaurants(data.restaurants || []))
+      .catch((err) => {
+        console.error('Failed to load spotlight restaurants:', err);
+        setAllRestaurants([]);
+      });
+  }, [mallId, categories]);
+
+  // Build a small rotating spotlight list
+  useEffect(() => {
+    if (!allRestaurants.length) {
+      setSpotlightList([]);
+      setSpotlightIndex(0);
+      return;
+    }
+
+    const copy = [...allRestaurants];
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    setSpotlightList(copy.slice(0, Math.min(6, copy.length)));
+    setSpotlightIndex(0);
+  }, [allRestaurants, mallId]);
+
+  // Rotate spotlight every few seconds
+  useEffect(() => {
+    if (spotlightList.length <= 1) return undefined;
+
+    const interval = setInterval(() => {
+      setSpotlightIndex((prev) => (prev + 1) % spotlightList.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [spotlightList]);
+
   // Load restaurants when categories or mall changes
   useEffect(() => {
     if (selectedCategories.length > 0 && mallId) {
@@ -480,6 +527,40 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 malls={malls}
                 loading={mallsLoading}
               />
+              <div className="spotlight-panel">
+                <div className="spotlight-header">
+                  <span className="spotlight-title">Restaurant of the day</span>
+                  <button
+                    type="button"
+                    className="spotlight-viewall"
+                    onClick={() => setShowRestaurantList(true)}
+                  >
+                    View all
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="spotlight-card"
+                  onClick={() => setShowRestaurantList(true)}
+                  aria-label="Open restaurant list"
+                >
+                  {spotlightList.length > 0 ? (
+                    <>
+                      <div className="spotlight-name">
+                        {spotlightList[spotlightIndex]?.name}
+                      </div>
+                      <div className="spotlight-meta">
+                        {spotlightList[spotlightIndex]?.category || 'Category'}
+                        {spotlightList[spotlightIndex]?.unit
+                          ? ` | ${spotlightList[spotlightIndex]?.unit}`
+                          : ''}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="spotlight-empty">Loading restaurants...</div>
+                  )}
+                </button>
+              </div>
               <DietarySelector
                 value={dietaryNeed}
                 onChange={setDietaryNeed}
@@ -538,6 +619,44 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
           onSpinAgain={handleSpin}
         />
       )}
+
+      {showRestaurantList ? (
+        <div
+          className="restaurant-list-overlay"
+          onClick={() => setShowRestaurantList(false)}
+          role="presentation"
+        >
+          <div
+            className="restaurant-list-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="restaurant-list-close"
+              onClick={() => setShowRestaurantList(false)}
+              aria-label="Close restaurant list"
+            >
+              X
+            </button>
+            <h2>All restaurants</h2>
+            <div className="restaurant-list-count">
+              {allRestaurants.length} total
+            </div>
+            <div className="restaurant-list-scroll">
+              {allRestaurants.map((r) => (
+                <div key={r.name} className="restaurant-list-row">
+                  <div className="restaurant-list-name">{r.name}</div>
+                  <div className="restaurant-list-meta">
+                    {r.category || 'Category'}
+                    {r.unit ? ` | ${r.unit}` : ''}
+                    {r.floor ? ` | ${r.floor}` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Voucher offer (pops on top of result modal) */}
       {showResult && result && showVoucherOffer ? (

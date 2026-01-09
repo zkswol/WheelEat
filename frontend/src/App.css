@@ -258,6 +258,139 @@ header h1 {
   text-align: center;
 }
 
+.spotlight-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.spotlight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.spotlight-title {
+  font-weight: 700;
+  color: #333;
+}
+
+.spotlight-viewall {
+  background: transparent;
+  border: 1px solid rgba(102, 126, 234, 0.4);
+  color: #667eea;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.spotlight-card {
+  border: 1px solid rgba(102, 126, 234, 0.25);
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.spotlight-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(102, 126, 234, 0.15);
+}
+
+.spotlight-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #2d3748;
+}
+
+.spotlight-meta {
+  margin-top: 6px;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.spotlight-empty {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.restaurant-list-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1400;
+  backdrop-filter: blur(6px);
+  padding: 14px;
+}
+
+.restaurant-list-modal {
+  width: min(720px, 100%);
+  max-height: min(82vh, 720px);
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  position: relative;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.restaurant-list-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 18px;
+  color: #444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.restaurant-list-count {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.restaurant-list-scroll {
+  overflow: auto;
+  padding-right: 4px;
+  display: grid;
+  gap: 10px;
+}
+
+.restaurant-list-row {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 12px;
+  background: #f9fafc;
+}
+
+.restaurant-list-name {
+  font-weight: 800;
+  color: #2d3748;
+}
+
+.restaurant-list-meta {
+  margin-top: 4px;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
 /* =========================================
    TABLET & LARGE MOBILE (768px and below)
    ========================================= */
@@ -317,6 +450,15 @@ header h1 {
 
   .restaurant-count {
     font-size: 0.85rem;
+  }
+
+  .spotlight-card {
+    padding: 12px;
+  }
+
+  .restaurant-list-modal {
+    padding: 18px;
+    border-radius: 18px;
   }
 }
 
@@ -387,6 +529,18 @@ header h1 {
 
   .restaurant-count {
     font-size: 0.8rem;
+  }
+
+  .spotlight-title {
+    font-size: 0.95rem;
+  }
+
+  .spotlight-name {
+    font-size: 1rem;
+  }
+
+  .restaurant-list-modal {
+    padding: 16px;
   }
 }
 
