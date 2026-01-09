@@ -1,8 +1,13 @@
 // POST /api/vouchers/spin
-// Demo: Far Coffee RM10 voucher spin (guaranteed win if stock available + before expiry)
+// Claim a voucher for a specific restaurant (5 total per restaurant, expires 24h after claim).
 
 import { createCORSResponse, jsonResponse } from '../lib/cors.js';
-import { spinFarCoffeeVoucher } from '../lib/farCoffeeVoucher.js';
+import { claimVoucher } from '../lib/voucherSystem.js';
+
+function isGuestUserId(userId) {
+  const s = String(userId || '');
+  return s.startsWith('anon_');
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -18,7 +23,11 @@ export async function onRequest(context) {
   }
 
   const userId = body?.user_id;
+  const merchantName = body?.merchant_name || body?.restaurant_name;
+  const merchantLogo = body?.merchant_logo || body?.logo || null;
   if (!userId) return jsonResponse({ detail: 'user_id is required' }, 400);
+  if (isGuestUserId(userId)) return jsonResponse({ detail: 'Google login required to claim vouchers' }, 401);
+  if (!merchantName) return jsonResponse({ detail: 'merchant_name is required' }, 400);
 
   try {
     // Check if DB binding exists
@@ -32,7 +41,12 @@ export async function onRequest(context) {
     }
 
     const nowMs = Date.now();
-    const out = await spinFarCoffeeVoucher(env, String(userId), nowMs);
+    const out = await claimVoucher(env, {
+      userId: String(userId),
+      merchantName: String(merchantName),
+      merchantLogo: merchantLogo ? String(merchantLogo) : null,
+      nowMs,
+    });
     return jsonResponse(out);
   } catch (e) {
     console.error('Voucher spin error:', e);

@@ -216,15 +216,15 @@ export async function getPageViewStats() {
 }
 
 // =========================
-// Demo Voucher System (Far Coffee)
+// Voucher System (per restaurant)
 // =========================
 
-export async function spinFarCoffeeVoucher(userId) {
+export async function claimRestaurantVoucher({ userId, merchantName, merchantLogo }) {
   const url = buildUrl('/api/vouchers/spin');
   return await fetchJson(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId }),
+    body: JSON.stringify({ user_id: userId, merchant_name: merchantName, merchant_logo: merchantLogo }),
   });
 }
 
@@ -235,6 +235,15 @@ export async function fetchUserVouchers(userId) {
 
 export async function removeUserVoucher({ userId, userVoucherId }) {
   const url = buildUrl('/api/vouchers/remove');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function markVoucherUsed({ userId, userVoucherId }) {
+  const url = buildUrl('/api/vouchers/use');
   return await fetchJson(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

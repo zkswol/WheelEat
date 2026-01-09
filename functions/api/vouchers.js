@@ -1,8 +1,13 @@
 // GET /api/vouchers?user_id=...
-// List Far Coffee vouchers for a user (and lazily expire/restock expired vouchers).
+// List vouchers for a user (expires/restocks are handled lazily).
 
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
-import { listFarCoffeeUserVouchers } from './lib/farCoffeeVoucher.js';
+import { listUserVouchers } from './lib/voucherSystem.js';
+
+function isGuestUserId(userId) {
+  const s = String(userId || '');
+  return s.startsWith('anon_');
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -13,6 +18,7 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const userId = url.searchParams.get('user_id');
   if (!userId) return jsonResponse({ detail: 'user_id is required' }, 400);
+  if (isGuestUserId(userId)) return jsonResponse({ vouchers: [] });
 
   try {
     // Check if DB binding exists
@@ -25,7 +31,7 @@ export async function onRequest(context) {
       }, 500);
     }
 
-    const out = await listFarCoffeeUserVouchers(env, String(userId), Date.now());
+    const out = await listUserVouchers(env, { userId: String(userId), nowMs: Date.now() });
     return jsonResponse(out);
   } catch (e) {
     console.error('Voucher list error:', e);

@@ -12,9 +12,10 @@ import {
   fetchRestaurants,
   spinWheel,
   trackPageView,
-  spinFarCoffeeVoucher,
+  claimRestaurantVoucher,
   fetchUserVouchers,
   removeUserVoucher,
+  markVoucherUsed,
   transferVouchers,
 } from './services/api';
 import Leaderboard from './components/Leaderboard';
@@ -37,7 +38,7 @@ function MenuIcon() {
 /**
  * Main App Component (WheelEat functionality)
  */
-function WheelEatApp({ user, onLogout, onShowLogin }) {
+function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPendingVoucherClaim }) {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
   const [mallsLoading, setMallsLoading] = useState(true);
@@ -63,8 +64,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [showVoucherWallet, setShowVoucherWallet] = useState(false);
   const [showVoucherOffer, setShowVoucherOffer] = useState(false);
   const [pendingVoucher, setPendingVoucher] = useState(null);
-  const [pendingVoucherNeedsLogin, setPendingVoucherNeedsLogin] = useState(false);
-  const [pendingVoucherSpinKey, setPendingVoucherSpinKey] = useState(null);
   const lastVoucherOfferKeyRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
@@ -82,8 +81,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
   const promoVouchers = useMemo(
     () => [
-      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
-      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Far Coffee', left: 10 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 5 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Far Coffee', left: 5 },
     ],
     []
   );
@@ -113,8 +112,11 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const refreshVouchers = useCallback(async () => {
     try {
       const data = await fetchUserVouchers(effectiveUserId);
-      // Only Far Coffee vouchers exist in this demo; keep only active vouchers in UI.
-      const active = Array.isArray(data?.vouchers) ? data.vouchers.filter((v) => v.status === 'active') : [];
+      const active = Array.isArray(data?.vouchers)
+        ? data.vouchers
+            .filter((v) => v.status === 'active')
+            .map((v) => ({ ...v, logo: v.merchant_logo || v.logo || null }))
+        : [];
       setVouchers(active);
     } catch (e) {
       console.debug('Failed to load vouchers:', e);
@@ -152,52 +154,50 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     };
   }, [menuOpen]);
 
-  // Show voucher offer whenever a spin result is shown (one offer per spin result)
+  // Show voucher offer whenever a spin result is shown (one offer per spin result).
+  // Note: We do NOT issue vouchers automatically; we only issue when user clicks "Claim".
   useEffect(() => {
     if (!showResult || !result) return;
     const key = result.spin_id || `${result.restaurant_name || ''}-${result.timestamp || ''}`;
     if (lastVoucherOfferKeyRef.current === key) return;
 
-    // Always issue voucher for the current effective user (guest/anon or Google)
     lastVoucherOfferKeyRef.current = key;
-    (async () => {
-      try {
-        const out = await spinFarCoffeeVoucher(effectiveUserId);
-        if (out?.won && out?.userVoucher) {
-          setPendingVoucher(out.userVoucher);
-          setShowVoucherOffer(true);
-          await refreshVouchers();
-        }
-      } catch (e) {
-        console.debug('Voucher spin failed:', e);
-      }
-    })();
-  }, [showResult, result, effectiveUserId, refreshVouchers]);
+    setPendingVoucher({
+      merchant_name: result.restaurant_name || 'Restaurant',
+      merchant_logo: result.logo || null,
+      value_rm: 10,
+    });
+    setShowVoucherOffer(true);
+  }, [showResult, result]);
 
-  // When user logs in after being prompted, issue the voucher under the Google account
+  // Auto-claim after login (pendingVoucherClaim is stored in App so it survives unmount when showing Login).
   useEffect(() => {
-    if (!pendingVoucherNeedsLogin) return;
+    if (!pendingVoucherClaim) return;
     if (isGuest) return;
-    if (!pendingVoucherSpinKey) return;
+    const merchantName = pendingVoucherClaim?.merchant_name;
+    if (!merchantName) return;
+    const merchantLogo = pendingVoucherClaim?.merchant_logo || null;
 
-    const key = pendingVoucherSpinKey;
-    lastVoucherOfferKeyRef.current = key;
     (async () => {
       try {
-        const out = await spinFarCoffeeVoucher(effectiveUserId);
-        if (out?.won && out?.userVoucher) {
-          setPendingVoucher(out.userVoucher);
-          setShowVoucherOffer(true);
+        const out = await claimRestaurantVoucher({
+          userId: effectiveUserId,
+          merchantName,
+          merchantLogo,
+        });
+        if (out?.won) {
           await refreshVouchers();
+          setShowVoucherWallet(true);
+        } else if (out?.reason === 'sold_out') {
+          alert('Sorry, this restaurant voucher is sold out.');
         }
       } catch (e) {
-        console.debug('Voucher spin (post-login) failed:', e);
+        console.debug('Auto-claim voucher failed:', e);
       } finally {
-        setPendingVoucherNeedsLogin(false);
-        setPendingVoucherSpinKey(null);
+        setPendingVoucherClaim?.(null);
       }
     })();
-  }, [pendingVoucherNeedsLogin, isGuest, pendingVoucherSpinKey, effectiveUserId, refreshVouchers]);
+  }, [pendingVoucherClaim, isGuest, effectiveUserId, refreshVouchers, setPendingVoucherClaim]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
@@ -401,42 +401,61 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   };
 
   const handleKeepVoucher = async () => {
-    // Check if user is a guest (not signed in with Google)
-    const isGuest = !user || user.loginType === 'guest' || String(user?.id || '').startsWith('anon_');
-    
     if (isGuest) {
-      // Guest users must sign in with Google to keep vouchers
+      const merchantName = pendingVoucher?.merchant_name;
+      if (merchantName) {
+        setPendingVoucherClaim?.({
+          merchant_name: merchantName,
+          merchant_logo: pendingVoucher?.merchant_logo || pendingVoucher?.logo || null,
+        });
+      }
       setShowVoucherOffer(false);
       setPendingVoucher(null);
-      // Show login modal
       onShowLogin();
-      // Show message
-      alert('Please sign in with Google to keep your voucher. Guest users cannot save vouchers.');
+      alert('Please sign in with Google to claim this voucher.');
       return;
     }
 
-    // User is signed in with Google - allow keeping voucher
-    setShowVoucherOffer(false);
-    setPendingVoucher(null);
-    await refreshVouchers();
-  };
+    const merchantName = pendingVoucher?.merchant_name;
+    if (!merchantName) {
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      return;
+    }
+    const merchantLogo = pendingVoucher?.merchant_logo || pendingVoucher?.logo || null;
 
-  const handleDeclineVoucher = async () => {
     try {
-      if (pendingVoucher?.id) {
-        await removeUserVoucher({ userId: effectiveUserId, userVoucherId: pendingVoucher.id });
+      const out = await claimRestaurantVoucher({
+        userId: effectiveUserId,
+        merchantName,
+        merchantLogo,
+      });
+      if (out?.won) {
+        await refreshVouchers();
+        setShowVoucherWallet(true);
+      } else if (out?.reason === 'sold_out') {
+        alert('Sorry, this restaurant voucher is sold out.');
       }
     } catch (e) {
-      console.debug('Failed to remove voucher:', e);
+      console.debug('Failed to claim voucher:', e);
     } finally {
       setShowVoucherOffer(false);
       setPendingVoucher(null);
-      await refreshVouchers();
     }
+  };
+
+  const handleDeclineVoucher = async () => {
+    setShowVoucherOffer(false);
+    setPendingVoucher(null);
   };
 
   const handleRemoveVoucher = async (userVoucherId) => {
     await removeUserVoucher({ userId: effectiveUserId, userVoucherId });
+    await refreshVouchers();
+  };
+
+  const handleUseVoucher = async (userVoucherId) => {
+    await markVoucherUsed({ userId: effectiveUserId, userVoucherId });
     await refreshVouchers();
   };
 
@@ -735,8 +754,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                               type="button"
                               className="voucher-card-cta"
                               onClick={() => {
-                                setFeaturedDetail(r);
-                                setShowFeaturedDetail(true);
+                                setPendingVoucher({
+                                  merchant_name: r.name,
+                                  merchant_logo: r.logo || null,
+                                  value_rm: 10,
+                                });
+                                setShowVoucherOffer(true);
                               }}
                             >
                               Collect voucher
@@ -854,7 +877,18 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                       </div>
                       <div className="voucher-card-left">{voucher.left} vouchers left</div>
                     </div>
-                    <button type="button" className="voucher-card-cta">
+                    <button
+                      type="button"
+                      className="voucher-card-cta"
+                      onClick={() => {
+                        setPendingVoucher({
+                          merchant_name: featuredDetail.name,
+                          merchant_logo: featuredDetail.logo || null,
+                          value_rm: 10,
+                        });
+                        setShowVoucherOffer(true);
+                      }}
+                    >
                       Collect voucher
                     </button>
                   </div>
@@ -865,8 +899,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
         </div>
       ) : null}
 
-      {/* Voucher offer (pops on top of result modal) */}
-      {showResult && result && showVoucherOffer ? (
+      {/* Voucher offer */}
+      {showVoucherOffer ? (
         <VoucherOfferModal
           voucher={pendingVoucher}
           onAccept={handleKeepVoucher}
@@ -881,6 +915,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
           vouchers={vouchers}
           onClose={() => setShowVoucherWallet(false)}
           onRemove={handleRemoveVoucher}
+          onUse={handleUseVoucher}
           onClear={handleClearVouchers}
         />
       ) : null}
@@ -892,6 +927,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+  // When a guest taps "Claim", we store the intended voucher here so after Google login we can auto-claim it.
+  const [pendingVoucherClaim, setPendingVoucherClaim] = useState(null);
 
   // Check if user is already logged in (on page load)
   useEffect(() => {
@@ -1019,6 +1056,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('wheeleat_user');
     setUser(null);
+    setPendingVoucherClaim(null);
   };
 
   // Show loading state briefly
@@ -1047,6 +1085,8 @@ function App() {
       user={user}
       onLogout={handleLogout}
       onShowLogin={() => setShowLogin(true)}
+      pendingVoucherClaim={pendingVoucherClaim}
+      setPendingVoucherClaim={setPendingVoucherClaim}
     />
   );
 }

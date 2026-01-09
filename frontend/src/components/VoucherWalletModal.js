@@ -25,7 +25,7 @@ function formatExpiry(ms) {
   }
 }
 
-export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClear }) {
+export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse, onClear }) {
   const list = Array.isArray(vouchers) ? vouchers : [];
   const [claimingVoucher, setClaimingVoucher] = useState(null);
 
@@ -50,7 +50,7 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClea
           <>
             <div className="voucher-wallet-list" role="list">
               {list.map((v) => {
-                const logoPath = v.logo ? `/${v.logo}` : null;
+                const logoPath = (v.merchant_logo || v.logo) ? `/${v.merchant_logo || v.logo}` : null;
                 const code = `WE-${String(v.id || '').slice(-6).toUpperCase()}`;
                 return (
                   <div key={v.id} className="voucher-wallet-item" role="listitem">
@@ -94,6 +94,15 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClea
                         title="Open"
                       >
                         Open
+                      </button>
+                      <button
+                        type="button"
+                        className="voucher-wallet-open"
+                        onClick={() => onUse?.(v.id)}
+                        aria-label={`Mark voucher as used for ${v.merchant_name || 'Restaurant'}`}
+                        title="Used"
+                      >
+                        Used
                       </button>
                       <button
                         type="button"

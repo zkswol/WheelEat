@@ -6,7 +6,7 @@ export const WHATSAPP_CLAIM_LINK = 'https://wa.link/oullbd';
 export default function ClaimCashbackModal({ voucher, onClose }) {
   if (!voucher) return null;
 
-  const logoPath = voucher.logo ? `/${voucher.logo}` : null;
+  const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
   const merchantName = voucher.merchant_name || 'Far Coffee';
   const code = `WE-${String(voucher.id || '').slice(-6).toUpperCase()}`;
 

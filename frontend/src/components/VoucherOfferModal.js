@@ -8,7 +8,7 @@ function formatRm(value) {
 }
 
 function formatMytExpiry(ms) {
-  if (!ms) return 'Today 5:00 PM (MYT)';
+  if (!ms) return '24 hours after you claim';
   try {
     // Malaysia Time (GMT+8)
     const d = new Date(Number(ms));
@@ -22,7 +22,7 @@ function formatMytExpiry(ms) {
       year: 'numeric',
     });
   } catch {
-    return 'Today 5:00 PM (MYT)';
+    return '24 hours after you claim';
   }
 }
 
@@ -30,7 +30,7 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
   if (!voucher) return null;
 
   const merchantName = voucher.merchant_name || 'Far Coffee';
-  const logoPath = voucher.logo ? `/${voucher.logo}` : null;
+  const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
   const amountLabel = formatRm(voucher.value_rm ?? 10);
 
   const code = String(voucher.id || '').slice(-6).toUpperCase();
@@ -90,7 +90,7 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
             fontSize: '14px',
             textAlign: 'center'
           }}>
-            ⚠️ Sign in with Google to keep this voucher. Guest users cannot save vouchers.
+            ⚠️ Sign in with Google to claim this voucher.
           </div>
         )}
         <div className="voucher-offer-actions">
@@ -99,10 +99,10 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
             className="voucher-offer-primary"
             onClick={() => onAccept?.()}
           >
-            {isGuest ? 'Sign in to Keep' : `Keep ${amountLabel}`}
+            {isGuest ? 'Sign in to Claim' : `Claim ${amountLabel}`}
           </button>
           <button type="button" className="voucher-offer-secondary" onClick={onDecline}>
-            Remove voucher
+            Not now
           </button>
         </div>
       </div>

@@ -1,8 +1,8 @@
-// POST /api/vouchers/remove
-// Remove (release) a user voucher and restock by +1.
+// POST /api/vouchers/use
+// Mark a user voucher as used (does NOT restock).
 
 import { createCORSResponse, jsonResponse } from '../lib/cors.js';
-import { removeUserVoucher } from '../lib/voucherSystem.js';
+import { useUserVoucher } from '../lib/voucherSystem.js';
 
 function isGuestUserId(userId) {
   const s = String(userId || '');
@@ -42,10 +42,10 @@ export async function onRequest(context) {
       );
     }
 
-    const out = await removeUserVoucher(env, { userId: String(userId), userVoucherId: String(userVoucherId), nowMs: Date.now() });
+    const out = await useUserVoucher(env, { userId: String(userId), userVoucherId: String(userVoucherId), nowMs: Date.now() });
     return jsonResponse(out);
   } catch (e) {
-    console.error('Voucher remove error:', e);
+    console.error('Voucher use error:', e);
     return jsonResponse({ error: 'Internal server error', message: e.message }, 500);
   }
 }
