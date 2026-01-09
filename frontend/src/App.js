@@ -786,18 +786,20 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               </div>
               <div className="restaurant-detail-row">
                 <span className="restaurant-detail-label">Visit Instagram:</span>
-                <a
-                  className="restaurant-detail-link"
-                  href={
-                    featuredDetail.name === 'Ba Shu Jia Yan'
-                      ? 'https://www.instagram.com/bashujiayansunway/'
-                      : '#'
-                  }
-                  target={featuredDetail.name === 'Ba Shu Jia Yan' ? '_blank' : undefined}
-                  rel={featuredDetail.name === 'Ba Shu Jia Yan' ? 'noopener noreferrer' : undefined}
-                >
-                  Open Instagram
-                </a>
+                {featuredDetail.name === 'Ba Shu Jia Yan' ? (
+                  <a
+                    className="restaurant-detail-link"
+                    href="https://www.instagram.com/bashujiayansunway/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Instagram
+                  </a>
+                ) : (
+                  <button type="button" className="restaurant-detail-link" disabled>
+                    Open Instagram
+                  </button>
+                )}
               </div>
               <div className="restaurant-detail-row">
                 <span className="restaurant-detail-label">Give me a review:</span>
